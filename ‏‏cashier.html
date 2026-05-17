@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARON POS - كاشير</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+
+:root {
+    --primary: #1a1a2e;
+    --accent: #e94560;
+    --success: #0f9b6e;
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --border: #e0e0e0;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Cairo',sans-serif; }
+body { background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* HEADER */
+.header {
+    background: var(--primary);
+    color: white;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.header h1 { font-size: 22px; font-weight: 800; }
+.header .nav-btns { display:flex; gap:8px; }
+.header button {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+}
+.header button.active { background: var(--accent); }
+
+/* LAYOUT */
+.container { display: flex; height: calc(100vh - 60px); }
+
+/* PRODUCTS PANEL */
+.products-panel {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ===== CATEGORIES - BIG CLEAR BUTTONS ===== */
+.categories-row {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 8px 4px;
+    min-height: 100px;
+    align-items: stretch;
+    background: #e8eaf6;
+    border-radius: 16px;
+    margin-bottom: 4px;
+}
+.categories-row::-webkit-scrollbar { height: 8px; }
+.categories-row::-webkit-scrollbar-thumb { background: #aaa; border-radius: 4px; }
+
+.cat-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    padding: 12px 16px;
+    border: 3px solid #c5cae9;
+    border-radius: 16px;
+    background: white;
+    color: var(--text);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s;
+}
+.cat-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.cat-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    box-shadow: 0 4px 16px rgba(233,69,96,0.3);
+}
+.cat-icon {
+    font-size: 40px !important;
+    line-height: 1;
+    display: block;
+}
+
+/* PRODUCTS GRID */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+.product-card {
+    background: white;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    border: 2px solid #eee;
+    position: relative;
+    transition: all 0.2s;
+}
+.product-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.product-card .prod-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+.product-card .prod-price { font-size: 17px; font-weight: 800; color: var(--accent); }
+.product-card .prod-code { position: absolute; top: 4px; left: 4px; font-size: 10px; color: #999; background: #f5f5f5; padding: 2px 6px; border-radius: 4px; }
+
+/* CART PANEL */
+.cart-panel {
+    width: 400px;
+    background: white;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+}
+.cart-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.cart-header .clear-btn {
+    background: #ffebee; color: #c62828; border: none;
+    padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;
+}
+.cart-items { flex: 1; overflow-y: auto; padding: 10px 14px; }
+.cart-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; background: #f8f9fa; border-radius: 10px;
+    margin-bottom: 6px;
+}
+.cart-item .item-info { flex: 1; }
+.cart-item .item-name { font-weight: 700; font-size: 13px; }
+.cart-item .item-price { font-size: 11px; color: #666; }
+.cart-item .item-qty { display: flex; align-items: center; gap: 4px; }
+.cart-item .item-qty button {
+    width: 26px; height: 26px; border: none; border-radius: 6px;
+    background: var(--primary); color: white; cursor: pointer; font-weight: 700;
+}
+.cart-item .item-total { font-weight: 800; color: var(--accent); min-width: 50px; text-align: left; }
+.cart-item .remove-btn {
+    background: #ffebee; color: #c62828; border: none;
+    width: 24px; height: 24px; border-radius: 6px; cursor: pointer;
+}
+
+/* CART FOOTER */
+.cart-footer {
+    padding: 14px 18px;
+    border-top: 2px solid var(--border);
+    background: #fafafa;
+}
+.delivery-row, .discount-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.delivery-row label, .discount-row label { font-weight: 700; font-size: 12px; min-width: 70px; }
+.delivery-row input, .discount-row input {
+    flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; text-align: center;
+}
+.totals {
+    margin: 10px 0; padding: 10px;
+    background: var(--primary); border-radius: 10px; color: white;
+}
+.totals .total-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+.totals .total-row.grand { font-size: 18px; font-weight: 800; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 6px; margin-top: 6px; }
+.action-btns { display: flex; gap: 8px; }
+.action-btns button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 14px; }
+.btn-print { background: var(--success); color: white; }
+.btn-hold { background: #fff3e0; color: #e65100; }
+
+/* OTHER */
+.search-box, .barcode-input {
+    padding: 10px 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; width: 100%;
+}
+.barcode-input { border: 2px solid var(--accent); text-align: center; font-weight: 700; }
+.empty-cart { text-align: center; padding: 30px; color: #999; }
+
+/* PRODUCTS MANAGEMENT */
+.prod-form { display: grid; gap: 10px; margin-bottom: 14px; }
+.prod-form input, .prod-form select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+.prod-form button { background: var(--success); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.prod-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 10px; margin-bottom: 6px; }
+.pl-edit { background: #e3f2fd; color: #1565c0; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.pl-del { background: #ffebee; color: #c62828; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+
+/* REPORTS */
+.report-filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+.report-filters input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+.report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.report-table th, .report-table td { padding: 10px; text-align: center; border-bottom: 1px solid #ddd; }
+.report-table th { background: var(--primary); color: white; }
+.reset-btn { background: #ffebee; color: #c62828; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .container { flex-direction: column; }
+    .cart-panel { width: 100%; height: 45vh; border-left: none; border-top: 1px solid #ddd; }
+    .products-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .cat-btn { min-width: 100px; padding: 10px 12px; }
+    .cat-icon { font-size: 32px !important; }
+}
+</style>
+<base target="_blank">
+<base target="_blank">
+</head>
+<body>
+
+<div class="header">
+    <h1>👑 BARON POS</h1>
+    <div class="nav-btns">
+        <button onclick="showSection('pos')" id="btn-pos" class="active">🛒 البيع</button>
+        <button onclick="showSection('products')" id="btn-products">📦 الأصناف</button>
+        <button onclick="showSection('reports')" id="btn-reports">📊 التقارير</button>
+        <button onclick="showSection('hold')" id="btn-hold">⏸️ معلقة (<span id="hold-count">0</span>)</button>
+    </div>
+</div>
+
+<div class="container">
+
+<!-- POS SECTION -->
+<div id="section-pos" class="products-panel">
+    <input type="text" class="barcode-input" id="barcodeInput" placeholder="🔍 اضغط هنا وامسح الباركود..." onkeydown="handleBarcode(event)">
+
+    <!-- Categories will be rendered here -->
+    <div class="categories-row" id="categoriesScroll"></div>
+
+    <input type="text" class="search-box" id="searchInput" placeholder="🔍 بحث في المنتجات..." oninput="filterProducts()">
+    <div class="products-grid" id="productsGrid"></div>
+</div>
+
+<!-- CART -->
+<div class="cart-panel">
+    <div class="cart-header">
+        <h3>🧾 الفاتورة</h3>
+        <button class="clear-btn" onclick="clearCart()">🗑️ إفراغ</button>
+    </div>
+    <div class="cart-items" id="cartItems"><div class="empty-cart">لا توجد منتجات</div></div>
+    <div class="cart-footer">
+        <div class="delivery-row">
+            <label>🚚 ديليفري:</label>
+            <input type="number" id="deliveryFee" value="0" min="0" onchange="updateCart()">
+        </div>
+        <div class="discount-row">
+            <label>💰 خصم %:</label>
+            <input type="number" id="discountPercent" value="0" min="0" max="100" onchange="updateCart()">
+            <span id="discountAmount">0</span>
+        </div>
+        <div class="totals">
+            <div class="total-row"><span>المجموع:</span><span id="subTotalDisplay">0</span></div>
+            <div class="total-row"><span>الديليفري:</span><span id="deliveryDisplay">0</span></div>
+            <div class="total-row"><span>الخصم:</span><span id="discountDisplay">0</span></div>
+            <div class="total-row grand"><span>الإجمالي:</span><span id="grandTotalDisplay">0</span></div>
+        </div>
+        <div class="action-btns">
+            <button class="btn-print" onclick="printAndSave()">🖨️ طباعة</button>
+            <button class="btn-hold" onclick="holdInvoice()">⏸️ تعليق</button>
+        </div>
+    </div>
+</div>
+
+<!-- PRODUCTS SECTION -->
+<div id="section-products" class="products-panel" style="display:none;">
+    <h2>📦 إدارة الأصناف</h2>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <input type="text" id="newCatName" placeholder="اسم القسم الجديد" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+        <input type="text" id="newCatIcon" placeholder="🍗" style="width:60px;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;text-align:center;">
+        <button onclick="addCategory()" style="padding:10px 16px;background:var(--success);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;">➕ قسم</button>
+    </div>
+    <div class="prod-form">
+        <input type="hidden" id="editProdId">
+        <input type="text" id="prodName" placeholder="اسم الصنف">
+        <input type="number" id="prodPrice" placeholder="السعر" min="0">
+        <select id="prodCategory"></select>
+        <input type="text" id="prodBarcode" placeholder="باركود (اختياري)">
+        <button onclick="saveProduct()">💾 حفظ</button>
+    </div>
+    <div id="productsList"></div>
+</div>
+
+<!-- REPORTS SECTION -->
+<div id="section-reports" class="products-panel" style="display:none;">
+    <h2>📊 تقارير المبيعات</h2>
+    <div class="report-filters">
+        <input type="date" id="reportFrom">
+        <input type="date" id="reportTo">
+        <button onclick="loadReport()" style="padding:8px 16px;background:var(--primary);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:700;">🔍 عرض</button>
+        <button onclick="exportPDF()" style="padding:8px 16px;background:var(--accent);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:700;">📄 PDF</button>
+        <button class="reset-btn" onclick="resetInvoiceCounter()">🔄 تصفير</button>
+    </div>
+    <div id="reportResult"></div>
+</div>
+
+<!-- HOLD SECTION -->
+<div id="section-hold" class="products-panel" style="display:none;">
+    <h2>⏸️ الفواتير المعلقة</h2>
+    <div id="holdList"></div>
+</div>
+
+</div>
+
+<script>
+// ==================== DATA ====================
+var defaultCategories = [
+    {id:'c1', name:'وجبات', icon:'🍗'},
+    {id:'c2', name:'مشروبات', icon:'🥤'},
+    {id:'c3', name:'تشكن برجر', icon:'🍔'},
+    {id:'c4', name:'اطباق جانبيه', icon:'🍟'},
+    {id:'c5', name:'إضافات', icon:'➕'},
+    {id:'c6', name:'وجبات الأطفال', icon:'👶'},
+    {id:'c7', name:'بيف برجر', icon:'🥩'},
+];
+
+var defaultProducts = [
+    {id:'p1', name:'تشكن بروست 2 قطع', price:165, category:'c1', barcode:'1001'},
+    {id:'p2', name:'تشكن بروست 4 قطع', price:289, category:'c1', barcode:'1002'},
+    {id:'p3', name:'تشكن بروست 8 قطع', price:589, category:'c1', barcode:'1003'},
+    {id:'p4', name:'اضافه الكومبو', price:50, category:'c5', barcode:'1004'},
+    {id:'p5', name:'قطعة فراخ', price:59, category:'c4', barcode:'1005'},
+    {id:'p6', name:'تندر 3 قطع', price:199, category:'c1', barcode:'1006'},
+    {id:'p7', name:'تندر 5 قطع', price:299, category:'c1', barcode:'1007'},
+    {id:'p8', name:'قطعة بوست', price:59, category:'c4', barcode:'1008'},
+    {id:'p9', name:'قطعة تندر', price:59, category:'c4', barcode:'1009'},
+    {id:'p10', name:'مياه', price:10, category:'c2', barcode:'1010'},
+    {id:'p11', name:'مياه غازيه', price:20, category:'c2', barcode:'1011'},
+    {id:'p12', name:'تشكن بارو', price:165, category:'c3', barcode:'1012'},
+    {id:'p13', name:'تشكن رانش', price:165, category:'c3', barcode:'1013'},
+    {id:'p14', name:'سموكى تشكن', price:186, category:'c3', barcode:'1014'},
+    {id:'p15', name:'هوت هانى تشكن رانش', price:185, category:'c3', barcode:'1015'},
+    {id:'p16', name:'تشيز برجر', price:215, category:'c7', barcode:'1016'},
+    {id:'p17', name:'مشروم برجر', price:225, category:'c7', barcode:'1017'},
+    {id:'p18', name:'بيكون برجر', price:235, category:'c7', barcode:'1018'},
+    {id:'p19', name:'سماش برجر', price:209, category:'c7', barcode:'1019'},
+    {id:'p20', name:'تشكن وينجز', price:150, category:'c4', barcode:'1020'},
+    {id:'p21', name:'تشيزفرايز', price:80, category:'c4', barcode:'1021'},
+    {id:'p22', name:'بطاطس مقليه باكيت', price:45, category:'c4', barcode:'1022'},
+    {id:'p23', name:'بطاطس مقليه فاميلى', price:79, category:'c4', barcode:'1023'},
+    {id:'p24', name:'رزبارو شيش', price:189, category:'c1', barcode:'1024'},
+    {id:'p25', name:'ريزو بارو', price:99, category:'c1', barcode:'1025'},
+    {id:'p26', name:'اونيون رينجز', price:59, category:'c4', barcode:'1026'},
+    {id:'p27', name:'موزاريلا ستيكس 4 قطع', price:59, category:'c4', barcode:'1027'},
+    {id:'p28', name:'شريحه بيكون', price:20, category:'c5', barcode:'1028'},
+    {id:'p29', name:'شريحة تركى مدخن', price:20, category:'c5', barcode:'1029'},
+    {id:'p30', name:'شيدر', price:30, category:'c5', barcode:'1030'},
+    {id:'p31', name:'بيبرمايو', price:0, category:'c5', barcode:'1031'},
+    {id:'p32', name:'رانش', price:20, category:'c5', barcode:'1032'},
+    {id:'p33', name:'بارو', price:20, category:'c5', barcode:'1033'},
+    {id:'p34', name:'باربكيو', price:20, category:'c5', barcode:'1034'},
+    {id:'p35', name:'صوص ثوم', price:20, category:'c5', barcode:'1035'},
+    {id:'p36', name:'هوت هانى', price:30, category:'c5', barcode:'1036'},
+    {id:'p37', name:'تشكن تشيز برجر', price:150, category:'c6', barcode:'1037'},
+    {id:'p38', name:'بيف تشيز برجر', price:150, category:'c6', barcode:'1038'},
+    {id:'p39', name:'تشكن أطفال', price:150, category:'c6', barcode:'1039'},
+];
+
+// STATE
+var categories = JSON.parse(localStorage.getItem('BARON_categories')) || defaultCategories;
+var products = JSON.parse(localStorage.getItem('BARON_products')) || defaultProducts;
+var cart = [];
+var currentCat = 'all';
+var invoiceCounter = parseInt(localStorage.getItem('BARON_invoice_counter') || '1');
+var holdInvoices = JSON.parse(localStorage.getItem('BARON_hold') || '[]');
+
+// INIT
+function init() {
+    console.log('INIT started');
+    console.log('Categories count:', categories.length);
+    console.log('Products count:', products.length);
+
+    renderCategories();
+    renderProducts();
+    updateCart();
+    updateHoldCount();
+
+    var reportFrom = document.getElementById('reportFrom');
+    var reportTo = document.getElementById('reportTo');
+    if (reportFrom) reportFrom.value = new Date().toISOString().split('T')[0];
+    if (reportTo) reportTo.value = new Date().toISOString().split('T')[0];
+
+    renderProductCategories();
+    renderProductsList();
+
+    setTimeout(function() {
+        var bi = document.getElementById('barcodeInput');
+        if (bi) bi.focus();
+    }, 300);
+
+    console.log('INIT completed');
+}
+
+function fmtNum(n) {
+    if (n === 0 || n === null || n === undefined) return '0';
+    return parseFloat(n.toFixed(2)).toString();
+}
+
+// ==================== CATEGORIES ====================
+function renderCategories() {
+    var scroll = document.getElementById('categoriesScroll');
+    if (!scroll) {
+        console.error('categoriesScroll not found!');
+        return;
+    }
+
+    var html = '';
+
+    // All button
+    html += '<button class="cat-btn' + (currentCat === 'all' ? ' active' : '') + '" onclick="setCategory(&quot;all&quot;)">';
+    html += '<span class="cat-icon">📋</span>';
+    html += '<span>الكل</span>';
+    html += '</button>';
+
+    // Category buttons
+    for (var i = 0; i < categories.length; i++) {
+        var c = categories[i];
+        html += '<button class="cat-btn' + (currentCat === c.id ? ' active' : '') + '" onclick="setCategory(&quot;' + c.id + '&quot;)">';
+        html += '<span class="cat-icon">' + (c.icon || '📦') + '</span>';
+        html += '<span>' + c.name + '</span>';
+        html += '</button>';
+    }
+
+    scroll.innerHTML = html;
+    console.log('Categories rendered:', categories.length + 1, 'buttons');
+}
+
+function setCategory(id) {
+    currentCat = id;
+    renderCategories();
+    renderProducts();
+}
+
+// ==================== PRODUCTS ====================
+function renderProducts() {
+    var grid = document.getElementById('productsGrid');
+    if (!grid) {
+        console.error('productsGrid not found!');
+        return;
+    }
+
+    var searchInput = document.getElementById('searchInput');
+    var search = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    var filtered = products;
+
+    if (currentCat !== 'all') {
+        filtered = filtered.filter(function(p) { return p.category === currentCat; });
+    }
+    if (search) {
+        filtered = filtered.filter(function(p) {
+            return p.name.toLowerCase().includes(search) || p.barcode.includes(search);
+        });
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-cart">لا توجد أصناف في هذا القسم</div>';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) {
+        var p = filtered[i];
+        html += '<div class="product-card" onclick="addToCart(&quot;' + p.id + '&quot;)">';
+        html += '<div class="prod-code">#' + p.barcode + '</div>';
+        html += '<div class="prod-name">' + p.name + '</div>';
+        html += '<div class="prod-price">' + fmtNum(p.price) + ' ج.م</div>';
+        html += '</div>';
+    }
+
+    grid.innerHTML = html;
+    console.log('Products rendered:', filtered.length, 'cards');
+}
+
+function filterProducts() {
+    renderProducts();
+}
+
+// ==================== BARCODE ====================
+function handleBarcode(e) {
+    if (e.key === 'Enter') {
+        var code = e.target.value.trim();
+        var prod = products.find(function(p) { return p.barcode === code; });
+        if (prod) {
+            addToCart(prod.id);
+            e.target.value = '';
+            e.target.focus();
+        } else {
+            alert('الباركود غير موجود!');
+            e.target.value = '';
+        }
+    }
+}
+
+// ==================== CART ====================
+function addToCart(pid, qty) {
+    qty = qty || 1;
+    var prod = products.find(function(p) { return p.id === pid; });
+    if (!prod) return;
+    var existing = cart.find(function(item) { return item.id === pid; });
+    if (existing) {
+        existing.qty += qty;
+    } else {
+        cart.push({ id: prod.id, name: prod.name, price: prod.price, qty: qty, barcode: prod.barcode });
+    }
+    updateCart();
+}
+
+function removeFromCart(pid) {
+    cart = cart.filter(function(item) { return item.id !== pid; });
+    updateCart();
+}
+
+function changeQty(pid, delta) {
+    var item = cart.find(function(i) { return i.id === pid; });
+    if (!item) return;
+    item.qty += delta;
+    if (item.qty <= 0) {
+        removeFromCart(pid);
+    } else {
+        updateCart();
+    }
+}
+
+function clearCart() {
+    if (!cart.length) return;
+    if (!confirm('هل تريد إفراغ الفاتورة؟')) return;
+    cart = [];
+    document.getElementById('deliveryFee').value = 0;
+    document.getElementById('discountPercent').value = 0;
+    updateCart();
+}
+
+function updateCart() {
+    var itemsDiv = document.getElementById('cartItems');
+    if (!itemsDiv) return;
+
+    if (!cart.length) {
+        itemsDiv.innerHTML = '<div class="empty-cart">لا توجد منتجات في الفاتورة</div>';
+    } else {
+        var html = '';
+        for (var i = 0; i < cart.length; i++) {
+            var item = cart[i];
+            html += '<div class="cart-item">';
+            html += '<button class="remove-btn" onclick="removeFromCart(&quot;' + item.id + '&quot;)">×</button>';
+            html += '<div class="item-info">';
+            html += '<div class="item-name">' + item.name + '</div>';
+            html += '<div class="item-price">' + fmtNum(item.price) + ' ج.م</div>';
+            html += '</div>';
+            html += '<div class="item-qty">';
+            html += '<button onclick="changeQty(&quot;' + item.id + '&quot;, -1)">−</button>';
+            html += '<span>' + item.qty + '</span>';
+            html += '<button onclick="changeQty(&quot;' + item.id + '&quot;, 1)">+</button>';
+            html += '</div>';
+            html += '<div class="item-total">' + fmtNum(item.price * item.qty) + '</div>';
+            html += '</div>';
+        }
+        itemsDiv.innerHTML = html;
+    }
+
+    var subTotal = cart.reduce(function(s, i) { return s + (i.price * i.qty); }, 0);
+    var delivery = parseFloat(document.getElementById('deliveryFee').value) || 0;
+    var discountPct = parseFloat(document.getElementById('discountPercent').value) || 0;
+    var discountAmt = subTotal * (discountPct / 100);
+    var grand = subTotal + delivery - discountAmt;
+
+    document.getElementById('subTotalDisplay').textContent = fmtNum(subTotal) + ' ج.م';
+    document.getElementById('deliveryDisplay').textContent = fmtNum(delivery) + ' ج.م';
+    document.getElementById('discountDisplay').textContent = fmtNum(discountAmt) + ' ج.م';
+    document.getElementById('discountAmount').textContent = fmtNum(discountAmt) + ' ج.م';
+    document.getElementById('grandTotalDisplay').textContent = fmtNum(grand) + ' ج.م';
+}
+
+// ==================== HOLD ====================
+function holdInvoice() {
+    if (!cart.length) { alert('الفاتورة فارغة!'); return; }
+    var hold = {
+        id: Date.now(),
+        time: new Date().toLocaleString('ar-EG'),
+        items: cart.slice(),
+        delivery: parseFloat(document.getElementById('deliveryFee').value) || 0,
+        discount: parseFloat(document.getElementById('discountPercent').value) || 0,
+    };
+    holdInvoices.push(hold);
+    localStorage.setItem('BARON_hold', JSON.stringify(holdInvoices));
+    cart = [];
+    document.getElementById('deliveryFee').value = 0;
+    document.getElementById('discountPercent').value = 0;
+    updateCart();
+    updateHoldCount();
+    alert('تم تعليق الفاتورة!');
+}
+
+function updateHoldCount() {
+    document.getElementById('hold-count').textContent = holdInvoices.length;
+}
+
+function renderHoldList() {
+    var div = document.getElementById('holdList');
+    if (!div) return;
+    if (!holdInvoices.length) {
+        div.innerHTML = '<div class="empty-cart">لا توجد فواتير معلقة</div>';
+        return;
+    }
+    var html = '';
+    for (var i = 0; i < holdInvoices.length; i++) {
+        var h = holdInvoices[i];
+        var sub = h.items.reduce(function(s, item) { return s + (item.price * item.qty); }, 0);
+        var total = sub + h.delivery - (sub * h.discount / 100);
+        html += '<div class="prod-list-item">';
+        html += '<div><strong>فاتورة #' + (i + 1) + '</strong><br><small>' + h.time + ' - ' + h.items.length + ' صنف</small></div>';
+        html += '<div><strong>' + fmtNum(total) + ' ج.م</strong> ';
+        html += '<button onclick="restoreHold(' + i + ')" style="margin:0 4px;padding:4px 10px;background:#1a1a2e;color:white;border:none;border-radius:4px;cursor:pointer;">استرجاع</button>';
+        html += '<button onclick="deleteHold(' + i + ')" style="padding:4px 10px;background:#c62828;color:white;border:none;border-radius:4px;cursor:pointer;">حذف</button>';
+        html += '</div></div>';
+    }
+    div.innerHTML = html;
+}
+
+function restoreHold(idx) {
+    var h = holdInvoices[idx];
+    cart = h.items.slice();
+    document.getElementById('deliveryFee').value = h.delivery;
+    document.getElementById('discountPercent').value = h.discount;
+    holdInvoices.splice(idx, 1);
+    localStorage.setItem('BARON_hold', JSON.stringify(holdInvoices));
+    updateCart();
+    updateHoldCount();
+    showSection('pos');
+}
+
+function deleteHold(idx) {
+    if (!confirm('حذف الفاتورة المعلقة؟')) return;
+    holdInvoices.splice(idx, 1);
+    localStorage.setItem('BARON_hold', JSON.stringify(holdInvoices));
+    renderHoldList();
+    updateHoldCount();
+}
+
+// ==================== QR CODE ====================
+function generateQR(text) {
+    var size = 25;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + size + ' ' + size + '" width="100%" height="100%">';
+    svg += '<rect width="' + size + '" height="' + size + '" fill="white"/>';
+
+    function drawFinder(x, y) {
+        svg += '<rect x="' + x + '" y="' + y + '" width="7" height="7" fill="black"/>';
+        svg += '<rect x="' + (x+1) + '" y="' + (y+1) + '" width="5" height="5" fill="white"/>';
+        svg += '<rect x="' + (x+2) + '" y="' + (y+2) + '" width="3" height="3" fill="black"/>';
+    }
+    drawFinder(0, 0);
+    drawFinder(size-7, 0);
+    drawFinder(0, size-7);
+
+    var hash = 0;
+    for (var i = 0; i < text.length; i++) {
+        hash = ((hash << 5) - hash) + text.charCodeAt(i);
+    }
+    hash = Math.abs(hash);
+
+    for (var row = 8; row < size-8; row++) {
+        for (var col = 8; col < size-8; col++) {
+            if ((hash ^ (row * 7) ^ (col * 13)) % 2 === 0) {
+                svg += '<rect x="' + col + '" y="' + row + '" width="1" height="1" fill="black"/>';
+            }
+        }
+    }
+    svg += '</svg>';
+    return svg;
+}
+
+// ==================== PRINT & SAVE ====================
+function printAndSave() {
+    if (!cart.length) { alert('الفاتورة فارغة!'); return; }
+
+    var subTotal = cart.reduce(function(s, i) { return s + (i.price * i.qty); }, 0);
+    var delivery = parseFloat(document.getElementById('deliveryFee').value) || 0;
+    var discountPct = parseFloat(document.getElementById('discountPercent').value) || 0;
+    var discountAmt = subTotal * (discountPct / 100);
+    var grand = subTotal + delivery - discountAmt;
+    var invNum = invoiceCounter++;
+    localStorage.setItem('BARON_invoice_counter', invoiceCounter);
+
+    var now = new Date();
+    var dateStr = now.toLocaleDateString('ar-EG');
+    var timeStr = now.toLocaleTimeString('ar-EG', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+    var today = now.toISOString().split('T')[0];
+    var daily = JSON.parse(localStorage.getItem('BARON_daily_' + today) || '[]');
+    daily.push({ invoice: invNum, time: timeStr, items: cart.slice(), subTotal: subTotal, delivery: delivery, discountPct: discountPct, discountAmt: discountAmt, grand: grand });
+    localStorage.setItem('BARON_daily_' + today, JSON.stringify(daily));
+
+    // استخدام صورة الباركود الجاهزة EL.jpg
+    var qrDataUrl = 'EL.jpg';
+
+    var itemsHtml = '';
+    for (var i = 0; i < cart.length; i++) {
+        var item = cart[i];
+        itemsHtml += '<tr>';
+        itemsHtml += '<td style="text-align:center;width:8mm;font-size:8pt;">' + (i + 1) + '</td>';
+        itemsHtml += '<td style="text-align:right;padding-right:1mm;font-size:8pt;">' + item.name + '</td>';
+        itemsHtml += '<td style="text-align:center;width:8mm;font-size:8pt;">' + item.qty + '</td>';
+        itemsHtml += '<td style="text-align:left;width:14mm;font-size:8pt;">' + fmtNum(item.price) + '</td>';
+        itemsHtml += '<td style="text-align:left;width:14mm;font-size:8pt;">' + fmtNum(item.price * item.qty) + '</td>';
+        itemsHtml += '</tr>';
+    }
+
+    var receiptHtml = '';
+    receiptHtml += '<div style="text-align:center;margin-bottom:2mm;">';
+    receiptHtml += '<div style="font-size:20pt;font-weight:bold;letter-spacing:3px;font-family:Courier New,monospace;">BARON</div>';
+    receiptHtml += '<div style="font-size:7pt;letter-spacing:4px;font-family:Courier New,monospace;">البــــــ BARON ــــــارون</div>';
+    receiptHtml += '</div>';
+    receiptHtml += '<div style="width:45mm;height:25mm;margin:2mm auto;"><img src="' + qrDataUrl + '" style="width:100%;height:100%;object-fit:contain;" /></div>';
+    receiptHtml += '<div style="border-top:1px dashed #000;margin:2mm 0;"></div>';
+    receiptHtml += '<div style="display:flex;justify-content:space-between;font-size:8pt;font-family:Courier New,monospace;margin-bottom:1mm;direction:rtl;">';
+    receiptHtml += '<span style="font-weight:bold;">فاتورة:</span><span>' + invNum + '</span></div>';
+    receiptHtml += '<div style="display:flex;justify-content:space-between;font-size:8pt;font-family:Courier New,monospace;margin-bottom:1mm;direction:rtl;">';
+    receiptHtml += '<span style="font-weight:bold;">الكاشيـــر</span><span>' + timeStr + '</span></div>';
+    receiptHtml += '<div style="display:flex;justify-content:space-between;font-size:8pt;font-family:Courier New,monospace;margin-bottom:1mm;direction:rtl;">';
+    receiptHtml += '<span style="font-weight:bold;">شرقاوى</span><span>' + dateStr + '</span></div>';
+    receiptHtml += '<div style="border-top:1px dashed #000;margin:2mm 0;"></div>';
+    receiptHtml += '<table style="width:100%;font-size:8pt;border-collapse:collapse;margin:2mm 0;font-family:Courier New,monospace;direction:rtl;">';
+    receiptHtml += '<tr><th style="border-top:1px solid #000;border-bottom:1px solid #000;padding:1mm 0;font-size:7pt;text-align:center;width:8mm;">م</th>';
+    receiptHtml += '<th style="border-top:1px solid #000;border-bottom:1px solid #000;padding:1mm 0;font-size:7pt;text-align:right;padding-right:1mm;">اسم الصنف</th>';
+    receiptHtml += '<th style="border-top:1px solid #000;border-bottom:1px solid #000;padding:1mm 0;font-size:7pt;text-align:center;width:8mm;">الكمية</th>';
+    receiptHtml += '<th style="border-top:1px solid #000;border-bottom:1px solid #000;padding:1mm 0;font-size:7pt;text-align:left;width:14mm;">السعر</th>';
+    receiptHtml += '<th style="border-top:1px solid #000;border-bottom:1px solid #000;padding:1mm 0;font-size:7pt;text-align:left;width:14mm;">الاجمالى</th></tr>';
+    receiptHtml += itemsHtml;
+    receiptHtml += '</table>';
+    receiptHtml += '<div style="border-top:2px solid #000;margin:2mm 0;"></div>';
+    receiptHtml += '<div style="border:2px solid #000;padding:2mm;margin:2mm 0;text-align:right;font-size:8pt;font-family:Courier New,monospace;direction:rtl;">';
+    receiptHtml += '<div style="display:flex;justify-content:space-between;margin-bottom:0.5mm;"><span>حساب الدفع عن طريق: فيزا</span><span>المدفوع: 0</span></div>';
+    receiptHtml += '<div style="display:flex;justify-content:space-between;margin-bottom:0.5mm;"><span>الخصم%: ' + fmtNum(discountPct) + '</span><span>الباقي: 0</span></div>';
+    receiptHtml += '<div style="display:flex;justify-content:space-between;margin-bottom:0.5mm;"><span>الديليفري: ' + fmtNum(delivery) + '</span><span></span></div>';
+    receiptHtml += '<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:10pt;"><span>المجموع: ' + fmtNum(grand) + '</span><span></span></div>';
+    receiptHtml += '</div>';
+    receiptHtml += '<div style="border-top:1px dashed #000;margin:2mm 0;"></div>';
+    receiptHtml += '<div style="font-size:9pt;font-weight:bold;margin-top:3mm;font-family:Courier New,monospace;direction:rtl;text-align:center;">خدمه التوصيل : 01070004717</div>';
+
+    var printWindow = window.open('', '_blank');
+    printWindow.document.write(
+        '<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><style>' +
+        '@page { size: 58mm auto; margin: 0; }' +
+        'body { margin: 0; padding: 0; }' +
+        '.receipt { width: 58mm; padding: 3mm; font-family: "Courier New", monospace; font-size: 9pt; line-height: 1.3; color: #000; background: #fff; direction: rtl; text-align: center; }' +
+        '.receipt * { font-family: "Courier New", monospace !important; }' +
+        'table { width: 100%; border-collapse: collapse; } th, td { padding: 1mm 0; }' +
+        '</style></head><body><div class="receipt">' + receiptHtml + '</div>' +
+        '<script>window.onload=function(){setTimeout(function(){window.print();setTimeout(function(){window.close();},500);},300);};<\/script>' +
+        '</body></html>'
+    );
+    printWindow.document.close();
+
+    // Save file
+    var fullHtml = '<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>فاتورة BARON #' + invNum + '</title>' +
+        '<style>body{margin:0;padding:20px;background:#f5f5f5;font-family:"Courier New",monospace;}' +
+        '.receipt{width:58mm;padding:3mm;font-family:"Courier New",monospace;font-size:9pt;line-height:1.3;color:#000;background:#fff;direction:rtl;text-align:center;margin:0 auto;box-shadow:0 2px 10px rgba(0,0,0,0.1);}' +
+        '.receipt *{font-family:"Courier New",monospace!important;}table{width:100%;border-collapse:collapse;}th,td{padding:1mm 0;}</style></head>' +
+        '<body><div class="receipt">' + receiptHtml + '</div></body></html>';
+
+    var blob = new Blob([fullHtml], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'فاتورة رقم_' + invNum + '_' + today + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    cart = [];
+    document.getElementById('deliveryFee').value = 0;
+    document.getElementById('discountPercent').value = 0;
+    updateCart();
+}
+
+// ==================== RESET ====================
+function resetInvoiceCounter() {
+    if (!confirm('هل تريد تصفير عداد الفواتير إلى 1؟')) return;
+    invoiceCounter = 1;
+    localStorage.setItem('BARON_invoice_counter', '1');
+    alert('تم تصفير عداد الفواتير إلى 1');
+}
+
+// ==================== REPORTS ====================
+function loadReport() {
+    var from = document.getElementById('reportFrom').value;
+    var to = document.getElementById('reportTo').value;
+    var result = document.getElementById('reportResult');
+
+    var allInvoices = [];
+    var start = new Date(from);
+    var end = new Date(to);
+
+    for (var d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        var key = 'BARON_daily_' + d.toISOString().split('T')[0];
+        var dayData = JSON.parse(localStorage.getItem(key) || '[]');
+        for (var j = 0; j < dayData.length; j++) {
+            dayData[j].date = d.toISOString().split('T')[0];
+            allInvoices.push(dayData[j]);
+        }
+    }
+
+    if (!allInvoices.length) {
+        result.innerHTML = '<div class="empty-cart">لا توجد بيانات في الفترة المحددة</div>';
+        return;
+    }
+
+    var totalSales = 0;
+    var totalItems = 0;
+    var rows = '';
+
+    for (var i = 0; i < allInvoices.length; i++) {
+        var inv = allInvoices[i];
+        totalSales += inv.grand;
+        totalItems += inv.items.reduce(function(s, item) { return s + item.qty; }, 0);
+        rows += '<tr><td>' + inv.invoice + '</td><td>' + inv.date + '</td><td>' + inv.time + '</td><td>' + inv.items.length + '</td>';
+        rows += '<td>' + fmtNum(inv.subTotal) + '</td><td>' + fmtNum(inv.delivery) + '</td><td>' + fmtNum(inv.discountAmt) + '</td>';
+        rows += '<td style="font-weight:800;color:var(--accent);">' + fmtNum(inv.grand) + '</td></tr>';
+    }
+
+    result.innerHTML = 
+        '<div style="margin-bottom:16px;padding:16px;background:var(--primary);color:white;border-radius:12px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:16px;">' +
+        '<div style="text-align:center;"><div style="font-size:12px;opacity:0.8;">إجمالي الفواتير</div><div style="font-size:24px;font-weight:800;">' + allInvoices.length + '</div></div>' +
+        '<div style="text-align:center;"><div style="font-size:12px;opacity:0.8;">إجمالي المبيعات</div><div style="font-size:24px;font-weight:800;">' + fmtNum(totalSales) + ' ج.م</div></div>' +
+        '<div style="text-align:center;"><div style="font-size:12px;opacity:0.8;">إجمالي القطع</div><div style="font-size:24px;font-weight:800;">' + totalItems + '</div></div></div>' +
+        '<table class="report-table"><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>الوقت</th><th>الأصناف</th><th>المجموع</th><th>ديليفري</th><th>الخصم</th><th>الإجمالي</th></tr>' + rows + '</table>';
+}
+
+function exportPDF() {
+    var from = document.getElementById('reportFrom').value;
+    var to = document.getElementById('reportTo').value;
+
+    var allInvoices = [];
+    var start = new Date(from);
+    var end = new Date(to);
+
+    for (var d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        var key = 'BARON_daily_' + d.toISOString().split('T')[0];
+        var dayData = JSON.parse(localStorage.getItem(key) || '[]');
+        for (var j = 0; j < dayData.length; j++) {
+            dayData[j].date = d.toISOString().split('T')[0];
+            allInvoices.push(dayData[j]);
+        }
+    }
+
+    var totalSales = 0;
+    var totalItems = 0;
+    var rows = '';
+
+    for (var i = 0; i < allInvoices.length; i++) {
+        var inv = allInvoices[i];
+        totalSales += inv.grand;
+        totalItems += inv.items.reduce(function(s, item) { return s + item.qty; }, 0);
+        rows += '<tr><td>' + inv.invoice + '</td><td>' + inv.date + '</td><td>' + inv.time + '</td><td>' + inv.items.length + '</td>';
+        rows += '<td>' + fmtNum(inv.subTotal) + '</td><td>' + fmtNum(inv.delivery) + '</td><td>' + fmtNum(inv.discountAmt) + '</td>';
+        rows += '<td>' + fmtNum(inv.grand) + '</td></tr>';
+    }
+
+    var html = '<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>تقرير المبيعات بارون</title>' +
+        '<style>@page{size:A4;margin:15mm;}body{font-family:Cairo,Arial;padding:20px;direction:rtl;background:white;color:#1a1a2e;}' +
+        'h1{text-align:center;color:#1a1a2e;font-size:24pt;margin-bottom:5px;}.subtitle{text-align:center;color:#666;font-size:12pt;margin-bottom:20px;}' +
+        '.summary{display:flex;justify-content:space-around;margin:20px 0;padding:20px;background:#1a1a2e;color:white;border-radius:12px;}' +
+        '.summary div{text-align:center;}.summary .label{font-size:11pt;opacity:0.8;margin-bottom:5px;}.summary .value{font-size:22pt;font-weight:800;}' +
+        'table{width:100%;border-collapse:collapse;margin-top:20px;font-size:10pt;}th,td{padding:10px;text-align:center;border:1px solid #ddd;}' +
+        'th{background:#1a1a2e;color:white;font-weight:700;}tr:nth-child(even){background:#f8f9fa;}tr:hover{background:#e3f2fd;}' +
+        '.footer{margin-top:30px;text-align:center;font-size:10pt;color:#666;border-top:1px solid #ddd;padding-top:15px;}' +
+        '.logo{text-align:center;margin-bottom:10px;font-size:28pt;font-weight:bold;letter-spacing:3px;}</style></head>' +
+        '<body><div class="logo">BARON POS</div><h1>📊 تقرير المبيعات بارون</h1><p class="subtitle">من: ' + from + ' &nbsp;&nbsp; إلى: ' + to + '</p>' +
+        '<div class="summary"><div><div class="label">إجمالي الفواتير</div><div class="value">' + allInvoices.length + '</div></div>' +
+        '<div><div class="label">إجمالي المبيعات</div><div class="value">' + fmtNum(totalSales) + ' ج.م</div></div>' +
+        '<div><div class="label">إجمالي القطع</div><div class="value">' + totalItems + '</div></div></div>' +
+        '<table><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>الوقت</th><th>الأصناف</th><th>المجموع</th><th>ديليفري</th><th>الخصم</th><th>الإجمالي</th></tr>' + rows + '</table>' +
+        '<div class="footer">تم إنشاء التقرير بتاريخ ' + new Date().toLocaleString('ar-EG') + '<br>BARON POS - نظام الكاشير</div>' +
+        '<script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script></body></html>';
+
+    var blob = new Blob([html], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '.تقرير المبيعات_' + from + '_to_' + to + '.pdf.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.open(url, '_blank');
+}
+
+// ==================== PRODUCTS MANAGEMENT ====================
+function renderProductCategories() {
+    var sel = document.getElementById('prodCategory');
+    if (!sel) return;
+    var html = '';
+    for (var i = 0; i < categories.length; i++) {
+        html += '<option value="' + categories[i].id + '">' + categories[i].name + '</option>';
+    }
+    sel.innerHTML = html;
+}
+
+function renderProductsList() {
+    var div = document.getElementById('productsList');
+    if (!div) return;
+    var html = '';
+    for (var i = 0; i < products.length; i++) {
+        var p = products[i];
+        var cat = categories.find(function(c) { return c.id === p.category; });
+        html += '<div class="prod-list-item">';
+        html += '<div><strong>' + p.name + '</strong><br><small>' + (cat ? cat.name : '') + ' - ' + fmtNum(p.price) + ' ج.م - باركود: ' + p.barcode + '</small></div>';
+        html += '<div><button class="pl-edit" onclick="editProduct(&quot;' + p.id + '&quot;)">تعديل</button>';
+        html += '<button class="pl-del" onclick="deleteProduct(&quot;' + p.id + '&quot;)">حذف</button></div></div>';
+    }
+    div.innerHTML = html;
+}
+
+function saveProduct() {
+    var id = document.getElementById('editProdId').value;
+    var name = document.getElementById('prodName').value.trim();
+    var price = parseFloat(document.getElementById('prodPrice').value) || 0;
+    var category = document.getElementById('prodCategory').value;
+    var customBarcode = document.getElementById('prodBarcode').value.trim();
+
+    if (!name) { alert('أدخل اسم الصنف!'); return; }
+
+    if (id) {
+        var p = products.find(function(x) { return x.id === id; });
+        if (p) { p.name = name; p.price = price; p.category = category; if(customBarcode) p.barcode = customBarcode; }
+    } else {
+        var newId = 'p' + Date.now();
+        var newBarcode = customBarcode || String(1000 + products.length + 1);
+        products.push({ id: newId, name: name, price: price, category: category, barcode: newBarcode });
+    }
+
+    localStorage.setItem('BARON_products', JSON.stringify(products));
+    document.getElementById('editProdId').value = '';
+    document.getElementById('prodName').value = '';
+    document.getElementById('prodPrice').value = '';
+    document.getElementById('prodBarcode').value = '';
+    renderProductsList();
+    renderProducts();
+    alert('تم الحفظ!');
+}
+
+function editProduct(id) {
+    var p = products.find(function(x) { return x.id === id; });
+    if (!p) return;
+    document.getElementById('editProdId').value = p.id;
+    document.getElementById('prodName').value = p.name;
+    document.getElementById('prodPrice').value = p.price;
+    document.getElementById('prodCategory').value = p.category;
+    document.getElementById('prodBarcode').value = p.barcode;
+}
+
+function deleteProduct(id) {
+    if (!confirm('حذف الصنف؟')) return;
+    products = products.filter(function(p) { return p.id !== id; });
+    localStorage.setItem('BARON_products', JSON.stringify(products));
+    renderProductsList();
+    renderProducts();
+}
+
+// ==================== ADD CATEGORY ====================
+function addCategory() {
+    var name = document.getElementById('newCatName').value.trim();
+    var icon = document.getElementById('newCatIcon').value.trim() || '📦';
+
+    if (!name) { alert('أدخل اسم القسم!'); return; }
+
+    var newId = 'c' + Date.now();
+    categories.push({ id: newId, name: name, icon: icon });
+    localStorage.setItem('BARON_categories', JSON.stringify(categories));
+
+    document.getElementById('newCatName').value = '';
+    document.getElementById('newCatIcon').value = '';
+
+    renderCategories();
+    renderProductCategories();
+    alert('تم إضافة القسم!');
+}
+
+// ==================== NAVIGATION ====================
+function showSection(sec) {
+    var sections = ['pos', 'products', 'reports', 'hold'];
+    for (var i = 0; i < sections.length; i++) {
+        var s = sections[i];
+        var el = document.getElementById('section-' + s);
+        var btn = document.getElementById('btn-' + s);
+        if (el) el.style.display = 'none';
+        if (btn) btn.classList.remove('active');
+    }
+    var activeEl = document.getElementById('section-' + sec);
+    var activeBtn = document.getElementById('btn-' + sec);
+    if (activeEl) activeEl.style.display = (sec === 'pos') ? 'flex' : 'block';
+    if (activeBtn) activeBtn.classList.add('active');
+
+    if (sec === 'hold') renderHoldList();
+    if (sec === 'pos') {
+        setTimeout(function() {
+            var bi = document.getElementById('barcodeInput');
+            if (bi) bi.focus();
+        }, 100);
+    }
+    if (sec === 'products') {
+        renderProductCategories();
+        renderProductsList();
+    }
+}
+
+// ==================== START ====================
+document.addEventListener('DOMContentLoaded', function() {
+    init();
+});
+</script>
+
+</body>
+</html>
