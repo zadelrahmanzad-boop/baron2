@@ -3,261 +3,504 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BARON POS - تسجيل الدخول</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>BARON POS - لوحة التحكم</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Cairo', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .login-box {
-            background: rgba(255,255,255,0.95);
-            padding: 45px 40px;
-            border-radius: 24px;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
-            width: 100%;
-            max-width: 440px;
-            animation: fadeIn 0.7s ease;
-            backdrop-filter: blur(20px);
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(40px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .brand {
-            text-align: center;
-            margin-bottom: 35px;
-        }
-        .brand h1 {
-            font-size: 36px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
-            letter-spacing: 1px;
-        }
-        .brand p { color: #888; font-size: 15px; }
-        .input-wrap {
-            margin-bottom: 20px;
-            position: relative;
-        }
-        .input-wrap label {
-            display: block;
-            margin-bottom: 8px;
-            color: #444;
-            font-weight: 700;
-            font-size: 14px;
-        }
-        .input-wrap input {
-            width: 100%;
-            padding: 14px 18px;
-            border: 2px solid #e8e8e8;
-            border-radius: 14px;
-            font-size: 16px;
-            font-family: 'Cairo', sans-serif;
-            transition: all 0.3s;
-            background: #fafafa;
-        }
-        .input-wrap input:focus {
-            outline: none;
-            border-color: #e94560;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(233,69,96,0.1);
-        }
-        .login-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #e94560 0%, #c73e54 100%);
-            color: white;
-            border: none;
-            border-radius: 14px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Cairo', sans-serif;
-            margin-top: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            letter-spacing: 0.5px;
-        }
-        .login-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(233,69,96,0.35);
-        }
-        .login-btn:active { transform: translateY(0); }
-        .login-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .alert {
-            padding: 14px;
-            border-radius: 12px;
-            margin-bottom: 18px;
-            font-size: 14px;
-            display: none;
-            text-align: center;
-            font-weight: 600;
-        }
-        .alert.show { display: block; }
-        .alert-err { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
-        .alert-warn { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
-        .alert-ok { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-        .loader {
-            display: none;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .hint {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 13px;
-            color: #999;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: #f0f2f5; min-height: 100vh; }
+        
+        .header { background: #1a1a2e; color: #fff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
+        .header h1 { color: #e94560; font-size: 24px; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-name { background: #e94560; padding: 8px 20px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .logout-btn { background: #0f3460; color: #fff; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; transition: 0.3s; }
+        .logout-btn:hover { background: #e94560; }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); transition: transform 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card h3 { color: #888; font-size: 14px; margin-bottom: 10px; }
+        .stat-card .value { color: #1a1a2e; font-size: 32px; font-weight: bold; }
+        .stat-card .icon { font-size: 40px; margin-bottom: 10px; }
+
+        .section { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 25px; }
+        .section h2 { color: #1a1a2e; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #e94560; display: inline-block; }
+        
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; }
+        .form-group input:focus, .form-group select:focus { border-color: #e94560; }
+        .form-group label { display: block; margin-bottom: 5px; color: #555; font-size: 14px; font-weight: 600; }
+
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: 0.3s; font-weight: 600; }
+        .btn-add { background: #e94560; color: #fff; }
+        .btn-add:hover { background: #c13651; }
+        .btn-edit { background: #0f3460; color: #fff; }
+        .btn-delete { background: #dc3545; color: #fff; }
+        .btn-delete:hover { background: #c82333; }
+        .btn-refresh { background: #28a745; color: #fff; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px 15px; text-align: right; border-bottom: 1px solid #eee; }
+        th { background: #1a1a2e; color: #fff; font-weight: 600; position: sticky; top: 0; }
+        tr:hover { background: #f8f9fa; }
+        .badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+
+        .empty-msg { text-align: center; color: #888; padding: 40px; font-size: 16px; }
+        .loading-msg { text-align: center; color: #e94560; padding: 20px; }
+        .sync-status { position: fixed; bottom: 20px; left: 20px; background: #1a1a2e; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; display: none; z-index: 1000; }
+        .sync-status.show { display: block; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #fff; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { color: #1a1a2e; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
     </style>
-<base target="_blank">
 </head>
 <body>
-    <div class="login-box">
-        <div class="brand">
-            <h1>🍔 BARON POS</h1>
-            <p>نظام كاشير المطاعم الذكي</p>
+
+    <div class="header">
+        <h1>🍔 BARON POS</h1>
+        <div class="user-info">
+            <span class="user-name" id="currentUser">⏳ جاري التحميل...</span>
+            <button class="logout-btn" onclick="logout()">🚪 تسجيل الخروج</button>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- إحصائيات -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="icon">📊</div>
+                <h3>إجمالي الطلبات</h3>
+                <div class="value" id="totalOrders">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">💰</div>
+                <h3>إجمالي المبيعات</h3>
+                <div class="value" id="totalSales">0 ج.م</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📦</div>
+                <h3>المنتجات</h3>
+                <div class="value" id="totalProducts">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">⏱️</div>
+                <h3>آخر تحديث</h3>
+                <div class="value" style="font-size: 16px;" id="lastUpdate">--</div>
+            </div>
         </div>
 
-        <div id="alertBox" class="alert"></div>
+        <!-- جدول الطلبات -->
+        <div class="section">
+            <h2>📝 إدارة الطلبات</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>رقم الطلب</label>
+                    <input type="text" id="orderId" placeholder="مثال: #001">
+                </div>
+                <div class="form-group">
+                    <label>اسم العميل</label>
+                    <input type="text" id="customerName" placeholder="اسم العميل">
+                </div>
+                <div class="form-group">
+                    <label>الصنف</label>
+                    <input type="text" id="itemName" placeholder="مثال: برجر لحم">
+                </div>
+                <div class="form-group">
+                    <label>الكمية</label>
+                    <input type="number" id="quantity" placeholder="1" min="1" value="1">
+                </div>
+                <div class="form-group">
+                    <label>السعر (ج.م)</label>
+                    <input type="number" id="price" placeholder="0" min="0">
+                </div>
+            </div>
+            
+            <button class="btn btn-add" id="addOrderBtn" onclick="addOrder()">➕ إضافة طلب</button>
+            <button class="btn btn-refresh" onclick="loadOrders()" style="float: left;">🔄 تحديث البيانات</button>
 
-        <form id="loginForm">
-            <div class="input-wrap">
-                <label>📧 البريد الإلكتروني</label>
-                <input type="email" id="email" placeholder="example@email.com" required>
+            <div id="ordersLoading" class="loading-msg" style="display: none;">⏳ جاري تحميل الطلبات...</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>رقم الطلب</th>
+                        <th>العميل</th>
+                        <th>الصنف</th>
+                        <th>الكمية</th>
+                        <th>السعر</th>
+                        <th>الإجمالي</th>
+                        <th>الكاشير</th>
+                        <th>التاريخ</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTable">
+                    <tr><td colspan="10" class="empty-msg">جاري تحميل البيانات...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- جدول المنتجات -->
+        <div class="section">
+            <h2>📦 المخزون / المنتجات</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>اسم المنتج</label>
+                    <input type="text" id="productName" placeholder="اسم المنتج">
+                </div>
+                <div class="form-group">
+                    <label>الفئة</label>
+                    <select id="productCategory">
+                        <option value="برجر">🍔 برجر</option>
+                        <option value="بيتزا">🍕 بيتزا</option>
+                        <option value="مشروبات">🥤 مشروبات</option>
+                        <option value="حلويات">🍰 حلويات</option>
+                        <option value="أطباق رئيسية">🍽️ أطباق رئيسية</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>السعر (ج.م)</label>
+                    <input type="number" id="productPrice" placeholder="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>الكمية المتاحة</label>
+                    <input type="number" id="productStock" placeholder="0" min="0">
+                </div>
             </div>
-            <div class="input-wrap">
-                <label>🔒 كلمة المرور</label>
-                <input type="password" id="password" placeholder="••••••••" required>
-            </div>
-            <button type="submit" class="login-btn" id="loginBtn">
-                <span class="loader" id="spinner"></span>
-                تسجيل الدخول
-            </button>
-        </form>
-        <p class="hint">ℹ️ إنشاء الحسابات متاح للمدير فقط من لوحة التحكم</p>
+            <button class="btn btn-add" id="addProductBtn" onclick="addProduct()">➕ إضافة منتج</button>
+            <button class="btn btn-refresh" onclick="loadProducts()" style="float: left;">🔄 تحديث</button>
+
+            <div id="productsLoading" class="loading-msg" style="display: none;">⏳ جاري تحميل المنتجات...</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>المنتج</th>
+                        <th>الفئة</th>
+                        <th>السعر</th>
+                        <th>المخزون</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="productsTable">
+                    <tr><td colspan="7" class="empty-msg">جاري تحميل البيانات...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
     </div>
+
+    <div class="sync-status" id="syncStatus">✅ تم المزامنة مع السحابة</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyDf_FZ5dDhJCYag9EpEblgylTrxber7oks",
-            authDomain: "cashier-52332.firebaseapp.com",
-            projectId: "cashier-52332",
-            storageBucket: "cashier-52332.firebasestorage.app",
-            messagingSenderId: "708122460779",
-            appId: "1:708122460779:web:5c0fb2f36488aa6ae3272e",
-            measurementId: "G-8BLM2L0LN5"
+            apiKey: "AIzaSyDP2XqvPp7UpF_i1Yhq69QTkMLdAlbVD0w",
+            authDomain: "caheir-d3e62.firebaseapp.com",
+            projectId: "caheir-d3e62",
+            storageBucket: "caheir-d3e62.firebasestorage.app",
+            messagingSenderId: "274782108081",
+            appId: "1:274782108081:web:717f6229b0d27f16b5e590",
+            measurementId: "G-M2P0KK4DDS"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    if (data.role !== 'admin' && data.expiresAt && data.expiresAt.toDate) {
-                        const now = new Date();
-                        const expires = data.expiresAt.toDate();
-                        if (now > expires) {
-                            await auth.signOut();
-                            showAlert('⛔ حسابك منتهي الصلاحية. تواصل مع المدير.', 'err');
-                            return;
-                        }
-                    }
-                }
-                window.location.href = "dashboard.html";
+        let currentUser = null;
+        let orders = [];
+        let products = [];
+
+        // ========== التحقق من المستخدم ==========
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                // مفيش مستخدم مسجل
+                window.location.href = 'https://zadelrahmanzad-boop.github.io/baron1/';
+                return;
+            }
+
+            // جلب بيانات المستخدم من localStorage أو Firestore
+            const storedUser = JSON.parse(localStorage.getItem('baron_current_user'));
+            
+            if (storedUser && storedUser.uid === user.uid) {
+                currentUser = storedUser;
+                document.getElementById('currentUser').innerHTML = `👤 ${currentUser.name}`;
+                loadOrders();
+                loadProducts();
+            } else {
+                // جلب من Firestore
+                getDoc(doc(db, "users", user.uid)).then((userDoc) => {
+                    currentUser = {
+                        uid: user.uid,
+                        email: user.email,
+                        name: userDoc.exists() ? userDoc.data().name : user.email.split('@')[0]
+                    };
+                    localStorage.setItem('baron_current_user', JSON.stringify(currentUser));
+                    document.getElementById('currentUser').innerHTML = `👤 ${currentUser.name}`;
+                    loadOrders();
+                    loadProducts();
+                });
             }
         });
 
-        function showAlert(text, type) {
-            const box = document.getElementById('alertBox');
-            box.textContent = text;
-            box.className = 'alert show alert-' + type;
-        }
+        window.logout = async function() {
+            try {
+                await signOut(auth);
+                localStorage.removeItem('baron_current_user');
+                window.location.href = 'https://zadelrahmanzad-boop.github.io/baron1/';
+            } catch (error) {
+                alert('❌ خطأ في تسجيل الخروج: ' + error.message);
+            }
+        };
 
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('loginBtn');
-            const spinner = document.getElementById('spinner');
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            btn.disabled = true;
-            spinner.style.display = 'inline-block';
+        // ========== إدارة الطلبات في Firestore ==========
+        window.loadOrders = async function() {
+            const tbody = document.getElementById('ordersTable');
+            const loading = document.getElementById('ordersLoading');
+            
+            loading.style.display = 'block';
+            tbody.innerHTML = '<tr><td colspan="10" class="empty-msg">جاري التحميل...</td></tr>';
 
             try {
-                const cred = await signInWithEmailAndPassword(auth, email, password);
-                const user = cred.user;
-                const userDoc = await getDoc(doc(db, "users", user.uid));
+                const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
+                const snapshot = await getDocs(q);
+                
+                orders = [];
+                snapshot.forEach((doc) => {
+                    orders.push({ id: doc.id, ...doc.data() });
+                });
 
-                if (!userDoc.exists()) {
-                    await auth.signOut();
-                    btn.disabled = false;
-                    spinner.style.display = 'none';
-                    showAlert('❌ بيانات المستخدم غير موجودة في النظام', 'err');
-                    return;
-                }
-
-                const data = userDoc.data();
-                if (data.status === 'disabled') {
-                    await auth.signOut();
-                    btn.disabled = false;
-                    spinner.style.display = 'none';
-                    showAlert('⛔ حسابك معطل', 'err');
-                    return;
-                }
-
-                if (data.role !== 'admin' && data.expiresAt && data.expiresAt.toDate) {
-                    const now = new Date();
-                    const expires = data.expiresAt.toDate();
-                    const daysLeft = Math.ceil((expires - now) / (1000 * 60 * 60 * 24));
-
-                    if (now > expires) {
-                        await auth.signOut();
-                        btn.disabled = false;
-                        spinner.style.display = 'none';
-                        showAlert('⛔ انتهت صلاحية حسابك', 'err');
-                        return;
-                    }
-                    if (daysLeft <= 3) {
-                        showAlert('⚠️ صلاحية حسابك تنتهي خلال ' + daysLeft + ' أيام', 'warn');
-                    }
-                }
-
-                await updateDoc(doc(db, "users", user.uid), { lastLogin: serverTimestamp() });
-            } catch (err) {
-                btn.disabled = false;
-                spinner.style.display = 'none';
-                let msg = '❌ ' + (err.code === 'auth/user-not-found' ? 'البريد غير مسجل' :
-                    err.code === 'auth/wrong-password' ? 'كلمة المرور غير صحيحة' :
-                    err.code === 'auth/invalid-email' ? 'بريد غير صالح' :
-                    err.code === 'auth/too-many-requests' ? 'محاولات كثيرة' : err.message);
-                showAlert(msg, 'err');
+                renderOrders();
+                updateStats();
+                showSyncStatus();
+            } catch (error) {
+                console.error("Error loading orders:", error);
+                tbody.innerHTML = `<tr><td colspan="10" class="empty-msg">❌ خطأ في تحميل البيانات: ${error.message}</td></tr>`;
+            } finally {
+                loading.style.display = 'none';
             }
-        });
+        };
+
+        function renderOrders() {
+            const tbody = document.getElementById('ordersTable');
+            
+            if (orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-msg">لا توجد طلبات مسجلة بعد</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = orders.map((order, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><strong>${order.orderId || '-'}</strong></td>
+                    <td>${order.customer}</td>
+                    <td>${order.item}</td>
+                    <td>${order.qty}</td>
+                    <td>${order.price} ج.م</td>
+                    <td><strong style="color: #e94560;">${order.total} ج.م</strong></td>
+                    <td>${order.cashier}</td>
+                    <td>${order.date}</td>
+                    <td>
+                        <button class="btn btn-delete" onclick="deleteOrder('${order.id}')">🗑️ حذف</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.addOrder = async function() {
+            const orderId = document.getElementById('orderId').value.trim() || '#' + Date.now().toString().slice(-4);
+            const customer = document.getElementById('customerName').value.trim();
+            const item = document.getElementById('itemName').value.trim();
+            const qty = parseInt(document.getElementById('quantity').value) || 1;
+            const price = parseFloat(document.getElementById('price').value) || 0;
+
+            if (!customer || !item) {
+                alert('❌ من فضلك أدخل اسم العميل والصنف');
+                return;
+            }
+
+            const btn = document.getElementById('addOrderBtn');
+            btn.disabled = true;
+            btn.innerText = '⏳ جاري الحفظ...';
+
+            try {
+                const orderData = {
+                    orderId: orderId,
+                    customer: customer,
+                    item: item,
+                    qty: qty,
+                    price: price,
+                    total: qty * price,
+                    cashier: currentUser.name,
+                    cashierId: currentUser.uid,
+                    date: new Date().toLocaleString('ar-EG'),
+                    timestamp: serverTimestamp()
+                };
+
+                await addDoc(collection(db, "orders"), orderData);
+                
+                // تفريغ الحقول
+                document.getElementById('orderId').value = '';
+                document.getElementById('customerName').value = '';
+                document.getElementById('itemName').value = '';
+                document.getElementById('quantity').value = '1';
+                document.getElementById('price').value = '';
+
+                await loadOrders();
+                showSyncStatus('✅ تم إضافة الطلب بنجاح!');
+            } catch (error) {
+                alert('❌ خطأ في الحفظ: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '➕ إضافة طلب';
+            }
+        };
+
+        window.deleteOrder = async function(docId) {
+            if (!confirm('هل أنت متأكد من حذف هذا الطلب؟')) return;
+
+            try {
+                await deleteDoc(doc(db, "orders", docId));
+                await loadOrders();
+                showSyncStatus('🗑️ تم الحذف بنجاح');
+            } catch (error) {
+                alert('❌ خطأ في الحذف: ' + error.message);
+            }
+        };
+
+        // ========== إدارة المنتجات في Firestore ==========
+        window.loadProducts = async function() {
+            const tbody = document.getElementById('productsTable');
+            const loading = document.getElementById('productsLoading');
+            
+            loading.style.display = 'block';
+
+            try {
+                const q = query(collection(db, "products"), orderBy("name"));
+                const snapshot = await getDocs(q);
+                
+                products = [];
+                snapshot.forEach((doc) => {
+                    products.push({ id: doc.id, ...doc.data() });
+                });
+
+                renderProducts();
+                document.getElementById('totalProducts').innerText = products.length;
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-msg">❌ خطأ: ${error.message}</td></tr>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        };
+
+        function renderProducts() {
+            const tbody = document.getElementById('productsTable');
+            
+            if (products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">لا توجد منتجات مسجلة</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = products.map((p, i) => {
+                const status = p.stock > 10 ? '<span class="badge badge-success">متوفر</span>' : 
+                               p.stock > 0 ? '<span class="badge badge-warning">منخفض</span>' : 
+                               '<span class="badge" style="background: #f8d7da; color: #721c24;">نفذ</span>';
+                
+                return `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${p.category}</td>
+                        <td>${p.price} ج.م</td>
+                        <td>${p.stock}</td>
+                        <td>${status}</td>
+                        <td>
+                            <button class="btn btn-delete" onclick="deleteProduct('${p.id}')">🗑️ حذف</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.addProduct = async function() {
+            const name = document.getElementById('productName').value.trim();
+            const category = document.getElementById('productCategory').value;
+            const price = parseFloat(document.getElementById('productPrice').value) || 0;
+            const stock = parseInt(document.getElementById('productStock').value) || 0;
+
+            if (!name) { alert('❌ أدخل اسم المنتج'); return; }
+
+            const btn = document.getElementById('addProductBtn');
+            btn.disabled = true;
+            btn.innerText = '⏳ جاري الحفظ...';
+
+            try {
+                await addDoc(collection(db, "products"), {
+                    name, category, price, stock,
+                    timestamp: serverTimestamp()
+                });
+
+                document.getElementById('productName').value = '';
+                document.getElementById('productPrice').value = '';
+                document.getElementById('productStock').value = '';
+
+                await loadProducts();
+                showSyncStatus('✅ تم إضافة المنتج!');
+            } catch (error) {
+                alert('❌ خطأ: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '➕ إضافة منتج';
+            }
+        };
+
+        window.deleteProduct = async function(docId) {
+            if (!confirm('هل أنت متأكد؟')) return;
+            try {
+                await deleteDoc(doc(db, "products", docId));
+                await loadProducts();
+                showSyncStatus('🗑️ تم حذف المنتج');
+            } catch (error) {
+                alert('❌ خطأ في الحذف');
+            }
+        };
+
+        // ========== إحصائيات ==========
+        function updateStats() {
+            const total = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+            document.getElementById('totalOrders').innerText = orders.length;
+            document.getElementById('totalSales').innerText = total.toLocaleString('ar-EG') + ' ج.م';
+            document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString('ar-EG');
+        }
+
+        function showSyncStatus(msg = '✅ تم المزامنة مع السحابة') {
+            const status = document.getElementById('syncStatus');
+            status.innerText = msg;
+            status.classList.add('show');
+            setTimeout(() => status.classList.remove('show'), 3000);
+        }
+
+        // تحديث تلقائي كل 30 ثانية
+        setInterval(() => {
+            if (currentUser) {
+                loadOrders();
+                loadProducts();
+            }
+        }, 30000);
     </script>
 </body>
 </html>
