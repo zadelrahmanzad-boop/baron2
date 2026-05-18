@@ -35,7 +35,6 @@
         .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: 0.3s; font-weight: 600; }
         .btn-add { background: #e94560; color: #fff; }
         .btn-add:hover { background: #c13651; }
-        .btn-edit { background: #0f3460; color: #fff; }
         .btn-delete { background: #dc3545; color: #fff; }
         .btn-delete:hover { background: #c82333; }
         .btn-refresh { background: #28a745; color: #fff; }
@@ -50,15 +49,11 @@
         .badge-warning { background: #fff3cd; color: #856404; }
 
         .empty-msg { text-align: center; color: #888; padding: 40px; font-size: 16px; }
+        .error-msg { text-align: center; color: #dc3545; padding: 20px; background: #f8d7da; border-radius: 8px; margin: 10px 0; }
         .loading-msg { text-align: center; color: #e94560; padding: 20px; }
         .sync-status { position: fixed; bottom: 20px; left: 20px; background: #1a1a2e; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; display: none; z-index: 1000; }
         .sync-status.show { display: block; }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: #fff; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-header h3 { color: #1a1a2e; }
-        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
+        .sync-status.error { background: #dc3545; }
     </style>
 </head>
 <body>
@@ -91,9 +86,9 @@
                 <div class="value" id="totalProducts">0</div>
             </div>
             <div class="stat-card">
-                <div class="icon">⏱️</div>
-                <h3>آخر تحديث</h3>
-                <div class="value" style="font-size: 16px;" id="lastUpdate">--</div>
+                <div class="icon">👤</div>
+                <h3>الكاشير الحالي</h3>
+                <div class="value" style="font-size: 18px;" id="currentCashier">--</div>
             </div>
         </div>
 
@@ -125,8 +120,9 @@
             </div>
             
             <button class="btn btn-add" id="addOrderBtn" onclick="addOrder()">➕ إضافة طلب</button>
-            <button class="btn btn-refresh" onclick="loadOrders()" style="float: left;">🔄 تحديث البيانات</button>
+            <button class="btn btn-refresh" onclick="loadOrders()" style="float: left;">🔄 تحديث</button>
 
+            <div id="ordersError" class="error-msg" style="display: none;"></div>
             <div id="ordersLoading" class="loading-msg" style="display: none;">⏳ جاري تحميل الطلبات...</div>
             <table>
                 <thead>
@@ -144,7 +140,7 @@
                     </tr>
                 </thead>
                 <tbody id="ordersTable">
-                    <tr><td colspan="10" class="empty-msg">جاري تحميل البيانات...</td></tr>
+                    <tr><td colspan="10" class="empty-msg">اضغط "تحديث" لعرض البيانات</td></tr>
                 </tbody>
             </table>
         </div>
@@ -179,6 +175,7 @@
             <button class="btn btn-add" id="addProductBtn" onclick="addProduct()">➕ إضافة منتج</button>
             <button class="btn btn-refresh" onclick="loadProducts()" style="float: left;">🔄 تحديث</button>
 
+            <div id="productsError" class="error-msg" style="display: none;"></div>
             <div id="productsLoading" class="loading-msg" style="display: none;">⏳ جاري تحميل المنتجات...</div>
             <table>
                 <thead>
@@ -193,19 +190,19 @@
                     </tr>
                 </thead>
                 <tbody id="productsTable">
-                    <tr><td colspan="7" class="empty-msg">جاري تحميل البيانات...</td></tr>
+                    <tr><td colspan="7" class="empty-msg">اضغط "تحديث" لعرض البيانات</td></tr>
                 </tbody>
             </table>
         </div>
 
     </div>
 
-    <div class="sync-status" id="syncStatus">✅ تم المزامنة مع السحابة</div>
+    <div class="sync-status" id="syncStatus">✅ تم المزامنة</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDP2XqvPp7UpF_i1Yhq69QTkMLdAlbVD0w",
@@ -217,44 +214,58 @@
             measurementId: "G-M2P0KK4DDS"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        let app, auth, db, currentUser = null;
 
-        let currentUser = null;
-        let orders = [];
-        let products = [];
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            console.log("✅ Firebase initialized in baron2");
+        } catch (e) {
+            console.error("❌ Firebase init error:", e);
+            showMainError("خطأ في تهيئة Firebase: " + e.message);
+        }
 
         // ========== التحقق من المستخدم ==========
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
+            console.log("Auth state changed:", user ? "Logged in" : "Not logged in");
+            
             if (!user) {
-                // مفيش مستخدم مسجل
+                console.log("No user, redirecting to login...");
                 window.location.href = 'https://zadelrahmanzad-boop.github.io/baron1/';
                 return;
             }
 
-            // جلب بيانات المستخدم من localStorage أو Firestore
+            // جلب بيانات المستخدم
             const storedUser = JSON.parse(localStorage.getItem('baron_current_user'));
             
             if (storedUser && storedUser.uid === user.uid) {
                 currentUser = storedUser;
-                document.getElementById('currentUser').innerHTML = `👤 ${currentUser.name}`;
-                loadOrders();
-                loadProducts();
             } else {
                 // جلب من Firestore
-                getDoc(doc(db, "users", user.uid)).then((userDoc) => {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
                     currentUser = {
                         uid: user.uid,
                         email: user.email,
                         name: userDoc.exists() ? userDoc.data().name : user.email.split('@')[0]
                     };
                     localStorage.setItem('baron_current_user', JSON.stringify(currentUser));
-                    document.getElementById('currentUser').innerHTML = `👤 ${currentUser.name}`;
-                    loadOrders();
-                    loadProducts();
-                });
+                } catch (e) {
+                    currentUser = {
+                        uid: user.uid,
+                        email: user.email,
+                        name: user.email.split('@')[0]
+                    };
+                }
             }
+
+            document.getElementById('currentUser').innerHTML = `👤 ${currentUser.name}`;
+            document.getElementById('currentCashier').innerText = currentUser.name;
+            
+            // تحميل البيانات
+            loadOrders();
+            loadProducts();
         });
 
         window.logout = async function() {
@@ -267,53 +278,72 @@
             }
         };
 
-        // ========== إدارة الطلبات في Firestore ==========
+        // ========== إدارة الطلبات ==========
         window.loadOrders = async function() {
             const tbody = document.getElementById('ordersTable');
             const loading = document.getElementById('ordersLoading');
+            const errorDiv = document.getElementById('ordersError');
             
             loading.style.display = 'block';
-            tbody.innerHTML = '<tr><td colspan="10" class="empty-msg">جاري التحميل...</td></tr>';
+            errorDiv.style.display = 'none';
+            tbody.innerHTML = '<tr><td colspan="10" class="loading-msg">⏳ جاري التحميل...</td></tr>';
 
             try {
+                console.log("Loading orders from Firestore...");
                 const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
                 const snapshot = await getDocs(q);
                 
-                orders = [];
+                console.log("Orders loaded:", snapshot.size);
+                
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="10" class="empty-msg">لا توجد طلبات مسجلة بعد. أضف طلب جديد!</td></tr>';
+                    updateStats(0, 0);
+                    return;
+                }
+
+                let orders = [];
                 snapshot.forEach((doc) => {
                     orders.push({ id: doc.id, ...doc.data() });
                 });
 
-                renderOrders();
-                updateStats();
-                showSyncStatus();
+                renderOrders(orders);
+                const total = orders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+                updateStats(orders.length, total);
+                showSyncStatus('✅ تم تحميل ' + orders.length + ' طلب');
+
             } catch (error) {
                 console.error("Error loading orders:", error);
-                tbody.innerHTML = `<tr><td colspan="10" class="empty-msg">❌ خطأ في تحميل البيانات: ${error.message}</td></tr>`;
+                let errorMsg = '❌ خطأ في تحميل البيانات: ';
+                if (error.code === 'permission-denied') {
+                    errorMsg += 'مشكلة في صلاحيات Firestore. تأكد من Rules.';
+                } else if (error.code === 'unauthenticated') {
+                    errorMsg += 'يجب تسجيل الدخول أولاً.';
+                } else {
+                    errorMsg += error.message;
+                }
+                
+                errorDiv.innerText = errorMsg;
+                errorDiv.style.display = 'block';
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-msg">❌ حدث خطأ في تحميل البيانات</td></tr>';
             } finally {
                 loading.style.display = 'none';
             }
         };
 
-        function renderOrders() {
+        function renderOrders(orders) {
             const tbody = document.getElementById('ordersTable');
             
-            if (orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="empty-msg">لا توجد طلبات مسجلة بعد</td></tr>';
-                return;
-            }
-
             tbody.innerHTML = orders.map((order, index) => `
                 <tr>
                     <td>${index + 1}</td>
                     <td><strong>${order.orderId || '-'}</strong></td>
-                    <td>${order.customer}</td>
-                    <td>${order.item}</td>
-                    <td>${order.qty}</td>
-                    <td>${order.price} ج.م</td>
-                    <td><strong style="color: #e94560;">${order.total} ج.م</strong></td>
-                    <td>${order.cashier}</td>
-                    <td>${order.date}</td>
+                    <td>${order.customer || '-'}</td>
+                    <td>${order.item || '-'}</td>
+                    <td>${order.qty || 0}</td>
+                    <td>${order.price || 0} ج.م</td>
+                    <td><strong style="color: #e94560;">${order.total || 0} ج.م</strong></td>
+                    <td>${order.cashier || '-'}</td>
+                    <td>${order.date || '-'}</td>
                     <td>
                         <button class="btn btn-delete" onclick="deleteOrder('${order.id}')">🗑️ حذف</button>
                     </td>
@@ -351,8 +381,10 @@
                     timestamp: serverTimestamp()
                 };
 
-                await addDoc(collection(db, "orders"), orderData);
-                
+                console.log("Adding order:", orderData);
+                const docRef = await addDoc(collection(db, "orders"), orderData);
+                console.log("Order added with ID:", docRef.id);
+
                 // تفريغ الحقول
                 document.getElementById('orderId').value = '';
                 document.getElementById('customerName').value = '';
@@ -362,7 +394,9 @@
 
                 await loadOrders();
                 showSyncStatus('✅ تم إضافة الطلب بنجاح!');
+
             } catch (error) {
+                console.error("Error adding order:", error);
                 alert('❌ خطأ في الحفظ: ' + error.message);
             } finally {
                 btn.disabled = false;
@@ -382,51 +416,58 @@
             }
         };
 
-        // ========== إدارة المنتجات في Firestore ==========
+        // ========== إدارة المنتجات ==========
         window.loadProducts = async function() {
             const tbody = document.getElementById('productsTable');
             const loading = document.getElementById('productsLoading');
+            const errorDiv = document.getElementById('productsError');
             
             loading.style.display = 'block';
+            errorDiv.style.display = 'none';
 
             try {
                 const q = query(collection(db, "products"), orderBy("name"));
                 const snapshot = await getDocs(q);
                 
-                products = [];
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">لا توجد منتجات مسجلة</td></tr>';
+                    document.getElementById('totalProducts').innerText = '0';
+                    return;
+                }
+
+                let products = [];
                 snapshot.forEach((doc) => {
                     products.push({ id: doc.id, ...doc.data() });
                 });
 
-                renderProducts();
+                renderProducts(products);
                 document.getElementById('totalProducts').innerText = products.length;
+
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="7" class="empty-msg">❌ خطأ: ${error.message}</td></tr>`;
+                console.error("Error loading products:", error);
+                errorDiv.innerText = '❌ خطأ: ' + error.message;
+                errorDiv.style.display = 'block';
             } finally {
                 loading.style.display = 'none';
             }
         };
 
-        function renderProducts() {
+        function renderProducts(products) {
             const tbody = document.getElementById('productsTable');
             
-            if (products.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">لا توجد منتجات مسجلة</td></tr>';
-                return;
-            }
-
             tbody.innerHTML = products.map((p, i) => {
-                const status = p.stock > 10 ? '<span class="badge badge-success">متوفر</span>' : 
-                               p.stock > 0 ? '<span class="badge badge-warning">منخفض</span>' : 
+                const stock = parseInt(p.stock) || 0;
+                const status = stock > 10 ? '<span class="badge badge-success">متوفر</span>' : 
+                               stock > 0 ? '<span class="badge badge-warning">منخفض</span>' : 
                                '<span class="badge" style="background: #f8d7da; color: #721c24;">نفذ</span>';
                 
                 return `
                     <tr>
                         <td>${i + 1}</td>
-                        <td><strong>${p.name}</strong></td>
-                        <td>${p.category}</td>
-                        <td>${p.price} ج.م</td>
-                        <td>${p.stock}</td>
+                        <td><strong>${p.name || '-'}</strong></td>
+                        <td>${p.category || '-'}</td>
+                        <td>${p.price || 0} ج.م</td>
+                        <td>${stock}</td>
                         <td>${status}</td>
                         <td>
                             <button class="btn btn-delete" onclick="deleteProduct('${p.id}')">🗑️ حذف</button>
@@ -460,6 +501,7 @@
 
                 await loadProducts();
                 showSyncStatus('✅ تم إضافة المنتج!');
+
             } catch (error) {
                 alert('❌ خطأ: ' + error.message);
             } finally {
@@ -479,28 +521,25 @@
             }
         };
 
-        // ========== إحصائيات ==========
-        function updateStats() {
-            const total = orders.reduce((sum, o) => sum + (o.total || 0), 0);
-            document.getElementById('totalOrders').innerText = orders.length;
+        // ========== مساعدات ==========
+        function updateStats(count, total) {
+            document.getElementById('totalOrders').innerText = count;
             document.getElementById('totalSales').innerText = total.toLocaleString('ar-EG') + ' ج.م';
-            document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString('ar-EG');
         }
 
-        function showSyncStatus(msg = '✅ تم المزامنة مع السحابة') {
+        function showSyncStatus(msg) {
             const status = document.getElementById('syncStatus');
             status.innerText = msg;
             status.classList.add('show');
+            status.classList.remove('error');
             setTimeout(() => status.classList.remove('show'), 3000);
         }
 
-        // تحديث تلقائي كل 30 ثانية
-        setInterval(() => {
-            if (currentUser) {
-                loadOrders();
-                loadProducts();
-            }
-        }, 30000);
+        function showMainError(msg) {
+            const status = document.getElementById('syncStatus');
+            status.innerText = msg;
+            status.classList.add('show', 'error');
+        }
     </script>
 </body>
 </html>
