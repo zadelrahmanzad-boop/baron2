@@ -64,6 +64,8 @@
         .btn-grn:hover { background: #219a52; }
         .btn-gry { background: #f0f0f0; color: #666; }
         .btn-gry:hover { background: #e0e0e0; }
+        .btn-warn { background: var(--warning); color: white; }
+        .btn-warn:hover { background: #d68910; }
         table { width: 100%; border-collapse: collapse; }
         th { background: #f8f9fa; padding: 14px 18px; text-align: right; font-size: 12px; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         td { padding: 14px 18px; border-bottom: 1px solid #f5f5f5; font-size: 14px; color: #555; }
@@ -127,14 +129,22 @@
         .invoice-print th { text-align: right; padding: 8px 0; border-bottom: 2px solid #333; }
         .invoice-print td { padding: 8px 0; border-bottom: 1px solid #eee; }
         .invoice-print .inv-total { text-align: left; font-size: 18px; font-weight: 800; margin-top: 15px; padding-top: 10px; border-top: 2px solid #333; }
-        @media (max-width: 1100px) { .pos-grid { grid-template-columns: 1fr; } .cart-panel { position: static; } }
-        @media (max-width: 768px) { .sidebar { transform: translateX(100%); width: 260px; } .main { margin-right: 0; } }
-        .section-view { display: none; }
-        .section-view.active { display: block; }
+        .online-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-left: 6px; animation: pulse 2s infinite; }
+        .offline-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #bbb; margin-left: 6px; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .days-left { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
         .days-grn { background: #d4edda; color: #155724; }
         .days-ylw { background: #fff3cd; color: #856404; }
         .days-red { background: #f8d7da; color: #721c24; }
+        @media (max-width: 1100px) { .pos-grid { grid-template-columns: 1fr; } .cart-panel { position: static; } }
+        @media (max-width: 768px) { .sidebar { transform: translateX(100%); width: 260px; } .main { margin-right: 0; } }
+        .section-view { display: none; }
+        .section-view.active { display: block; }
+        .admin-only-nav { display: none; }
+        .admin-only-nav.show { display: flex; }
+        .cat-input-row { display: flex; gap: 8px; }
+        .cat-input-row input { flex: 1; }
+        .cat-input-row button { padding: 0 14px; border-radius: 10px; border: none; background: var(--primary); color: white; cursor: pointer; font-family: 'Cairo', sans-serif; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -148,7 +158,7 @@
             <li class="nav-item" onclick="navTo('products')"><i class="fas fa-utensils"></i><span>المنتجات</span></li>
             <li class="nav-item" onclick="navTo('invoices')"><i class="fas fa-file-invoice-dollar"></i><span>الفواتير</span></li>
             <li class="nav-item" onclick="navTo('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></li>
-            <li class="nav-item" onclick="navTo('users')"><i class="fas fa-users-cog"></i><span>المستخدمين</span></li>
+            <li class="nav-item admin-only-nav" id="navUsers" onclick="navTo('users')"><i class="fas fa-users-cog"></i><span>المستخدمين</span></li>
         </ul>
         <div class="sidebar-footer">
             <div class="user-mini">
@@ -224,6 +234,7 @@
                         <div class="btns">
                             <button class="btn btn-sec" onclick="loadInvoicesTable()"><i class="fas fa-sync-alt"></i> تحديث</button>
                             <button class="btn btn-gry" onclick="printDayReport()"><i class="fas fa-print"></i> تقرير اليوم</button>
+                            <button class="btn btn-warn admin-only-nav" id="btnResetInv" onclick="resetInvoiceCounter()"><i class="fas fa-redo"></i> إعادة الترقيم</button>
                         </div>
                     </div>
                     <table>
@@ -241,7 +252,13 @@
                     <div class="stat-box s4"><div class="stat-icon"><i class="fas fa-fire"></i></div><div class="stat-label">أكثر منتج مبيعاً</div><div class="stat-num" style="font-size:16px;" id="repTopProduct">-</div></div>
                 </div>
                 <div class="card">
-                    <div class="card-head"><h3>تقرير المبيعات اليومية</h3></div>
+                    <div class="card-head">
+                        <h3>تقرير المبيعات اليومية</h3>
+                        <div class="btns">
+                            <button class="btn btn-sec" onclick="loadReports()"><i class="fas fa-sync-alt"></i> تحديث</button>
+                            <button class="btn btn-gry" onclick="printReports()"><i class="fas fa-print"></i> طباعة / حفظ</button>
+                        </div>
+                    </div>
                     <table>
                         <thead><tr><th>التاريخ</th><th>عدد الفواتير</th><th>إجمالي المبيعات</th><th>متوسط الفاتورة</th></tr></thead>
                         <tbody id="dailyReportBody"><tr><td colspan="4" class="empty"><i class="fas fa-chart-bar"></i><p>لا توجد بيانات</p></td></tr></tbody>
@@ -259,8 +276,8 @@
                         </div>
                     </div>
                     <table>
-                        <thead><tr><th>#</th><th>الاسم</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>الصلاحية</th><th>تاريخ الإنشاء</th><th>إجراءات</th></tr></thead>
-                        <tbody id="usersBody"><tr><td colspan="8" class="empty"><div class="spin"></div></td></tr></tbody>
+                        <thead><tr><th>#</th><th>الاسم</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>الصلاحية</th><th>الاتصال</th><th>تاريخ الإنشاء</th><th>إجراءات</th></tr></thead>
+                        <tbody id="usersBody"><tr><td colspan="9" class="empty"><div class="spin"></div></td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -270,11 +287,25 @@
     <div class="modal-bg" id="productModal">
         <div class="modal-box">
             <button class="modal-close" onclick="closeProductModal()">&times;</button>
-            <h2>إضافة منتج جديد</h2>
+            <h2 id="prodModalTitle">إضافة منتج جديد</h2>
             <div class="form-row"><label>كود المنتج</label><input type="text" id="prodCode" placeholder="#1001"></div>
             <div class="form-row"><label>اسم المنتج</label><input type="text" id="prodName" placeholder="تشكن بروست"></div>
             <div class="form-row"><label>السعر (ج.م)</label><input type="number" id="prodPrice" placeholder="165"></div>
-            <div class="form-row"><label>الفئة</label><select id="prodCat"><option value="تشكن">تشكن</option><option value="برجر">برجر</option><option value="سايدز">سايدز</option><option value="مشروبات">مشروبات</option><option value="أخرى">أخرى</option></select></div>
+            <div class="form-row">
+                <label>الفئة</label>
+                <select id="prodCat" onchange="onProdCatChange()">
+                    <option value="تشكن">تشكن</option>
+                    <option value="برجر">برجر</option>
+                    <option value="سايدز">سايدز</option>
+                    <option value="مشروبات">مشروبات</option>
+                    <option value="أخرى">أخرى</option>
+                    <option value="__new__">+ فئة جديدة</option>
+                </select>
+                <div id="newCatRow" class="cat-input-row hidden" style="margin-top:8px;">
+                    <input type="text" id="newCatInput" placeholder="اسم الفئة الجديدة">
+                    <button onclick="addNewCategory()">إضافة</button>
+                </div>
+            </div>
             <div class="modal-foot"><button class="btn btn-gry" onclick="closeProductModal()">إلغاء</button><button class="btn btn-main" onclick="saveProduct()">حفظ</button></div>
         </div>
     </div>
@@ -300,7 +331,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, deleteDoc, addDoc, setDoc, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, deleteDoc, addDoc, setDoc, serverTimestamp, query, orderBy, limit, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const app = initializeApp({
             apiKey: "AIzaSyDf_FZ5dDhJCYag9EpEblgylTrxber7oks",
@@ -315,6 +346,7 @@
         const db = getFirestore(app);
 
         let currentUser = null, userData = null, isAdmin = false, cart = [], allProducts = [];
+        let productCategories = ["تشكن", "برجر", "سايدز", "مشروبات", "أخرى"];
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/"; return; }
@@ -344,21 +376,35 @@
                     return;
                 }
                 isAdmin = userData.role === 'admin';
-                if (isAdmin) document.getElementById('btnAddUser').style.display = 'inline-flex';
+                if (isAdmin) {
+                    document.getElementById('btnAddUser').style.display = 'inline-flex';
+                    document.getElementById('navUsers').classList.add('show');
+                    document.getElementById('btnResetInv').style.display = 'inline-flex';
+                }
             } else {
                 document.getElementById('uName').textContent = user.email;
                 document.getElementById('uRole').textContent = 'مستخدم';
                 document.getElementById('currentUserName').textContent = user.email;
             }
+            // update lastSeen every minute
+            updateLastSeen();
+            setInterval(updateLastSeen, 60000);
             loadPosProducts();
             loadStats();
+            loadCategories();
         });
+
+        async function updateLastSeen() {
+            if (!currentUser) return;
+            await setDoc(doc(db, "users", currentUser.uid), { lastSeen: serverTimestamp() }, { merge: true });
+        }
 
         function roleName(r) { return { admin: 'مدير', manager: 'مشرف', cashier: 'كاشير' }[r] || r; }
 
         document.getElementById('topDate').textContent = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
         window.navTo = (sec) => {
+            if (sec === 'users' && !isAdmin) { alert('للمدير فقط'); return; }
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             event.currentTarget.classList.add('active');
             document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
@@ -370,6 +416,46 @@
             if (sec === 'reports') loadReports();
             if (sec === 'users') loadUsersTable();
             document.getElementById('statsBar').style.display = sec === 'pos' ? 'grid' : 'none';
+        };
+
+        async function loadCategories() {
+            try {
+                const snap = await getDocs(collection(db, "products"));
+                const cats = new Set(productCategories);
+                snap.forEach(d => { const c = d.data().category; if (c) cats.add(c); });
+                productCategories = Array.from(cats);
+                updateProdCatSelect();
+            } catch (e) {}
+        }
+
+        function updateProdCatSelect() {
+            const sel = document.getElementById('prodCat');
+            const current = sel.value;
+            sel.innerHTML = '';
+            productCategories.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                sel.appendChild(opt);
+            });
+            const newOpt = document.createElement('option');
+            newOpt.value = '__new__'; newOpt.textContent = '+ فئة جديدة';
+            sel.appendChild(newOpt);
+            if (productCategories.includes(current)) sel.value = current;
+        }
+
+        window.onProdCatChange = () => {
+            const val = document.getElementById('prodCat').value;
+            document.getElementById('newCatRow').classList.toggle('hidden', val !== '__new__');
+        };
+
+        window.addNewCategory = () => {
+            const val = document.getElementById('newCatInput').value.trim();
+            if (!val) return;
+            if (!productCategories.includes(val)) productCategories.push(val);
+            updateProdCatSelect();
+            document.getElementById('prodCat').value = val;
+            document.getElementById('newCatRow').classList.add('hidden');
+            document.getElementById('newCatInput').value = '';
         };
 
         async function loadPosProducts() {
@@ -449,6 +535,23 @@
             btn.disabled = false;
         }
 
+        async function getNextInvoiceNumber() {
+            const counterRef = doc(db, "settings", "invoiceCounter");
+            try {
+                const result = await runTransaction(db, async (transaction) => {
+                    const snap = await transaction.get(counterRef);
+                    let current = 1;
+                    if (snap.exists()) current = (snap.data().value || 0) + 1;
+                    transaction.set(counterRef, { value: current, updatedAt: serverTimestamp() });
+                    return current;
+                });
+                return result;
+            } catch (e) {
+                // fallback to random if transaction fails
+                return Math.floor(Math.random() * 900000) + 100000;
+            }
+        }
+
         window.checkout = async () => {
             if (cart.length === 0) return;
             const btn = document.getElementById('checkoutBtn');
@@ -457,12 +560,14 @@
             const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
             const items = cart.map(i => ({ name: i.name, price: i.price, qty: i.qty, total: i.price * i.qty }));
             try {
+                const invoiceNumber = await getNextInvoiceNumber();
                 const invRef = await addDoc(collection(db, "invoices"), {
+                    invoiceNumber: invoiceNumber,
                     items: items, total: total, itemCount: cart.reduce((s, i) => s + i.qty, 0),
                     cashierId: currentUser.uid, cashierName: userData?.fullName || currentUser.email,
                     createdAt: serverTimestamp()
                 });
-                showInvoice(invRef.id, items, total);
+                showInvoice(invRef.id, invoiceNumber, items, total);
                 cart = [];
                 renderCart();
                 loadStats();
@@ -474,15 +579,21 @@
             }
         };
 
-        function showInvoice(invId, items, total) {
+        function showInvoice(invId, invoiceNumber, items, total) {
             const modal = document.getElementById('invoiceModal');
             const box = document.getElementById('invoiceDetailContent');
             const now = new Date().toLocaleString('ar-EG');
             let rows = '';
             items.forEach(i => { rows += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.total} ج.م</td></tr>`; });
-            box.innerHTML = `<div class="invoice-print"><h2>BARON POS</h2><div class="inv-info">فاتورة رقم: #${invId.slice(-6)}<br>${now}<br>الكاشير: ${userData?.fullName || currentUser.email}</div><table><thead><tr><th>المنتج</th><th>الكمية</th><th>المبلغ</th></tr></thead><tbody>${rows}</tbody></table><div class="inv-total">الإجمالي: ${total} ج.م</div><div style="text-align:center;margin-top:20px;color:#aaa;font-size:12px;">شكراً لزيارتكم</div><div style="text-align:center;margin-top:15px;"><button class="btn btn-main" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button><button class="btn btn-gry" onclick="closeInvoiceModal()">إغلاق</button></div></div>`;
+            box.innerHTML = `<div class="invoice-print"><h2>BARON POS</h2><div class="inv-info">فاتورة رقم: #${invoiceNumber}<br>${now}<br>الكاشير: ${userData?.fullName || currentUser.email}</div><table><thead><tr><th>المنتج</th><th>الكمية</th><th>المبلغ</th></tr></thead><tbody>${rows}</tbody></table><div class="inv-total">الإجمالي: ${total} ج.م</div><div style="text-align:center;margin-top:20px;color:#aaa;font-size:12px;">شكراً لزيارتكم</div><div style="text-align:center;margin-top:15px;"><button class="btn btn-main" onclick="printAndCloseInvoice('${invId}')"><i class="fas fa-print"></i> طباعة وحفظ</button><button class="btn btn-gry" onclick="closeInvoiceModal()">إغلاق</button></div></div>`;
             modal.classList.add('show');
         }
+
+        window.printAndCloseInvoice = async (invId) => {
+            // Mark as printed
+            await setDoc(doc(db, "invoices", invId), { printed: true, printedAt: serverTimestamp() }, { merge: true });
+            window.print();
+        };
 
         window.closeInvoiceModal = () => { document.getElementById('invoiceModal').classList.remove('show'); };
 
@@ -492,18 +603,23 @@
             document.getElementById('prodCode').value = '';
             document.getElementById('prodName').value = '';
             document.getElementById('prodPrice').value = '';
+            document.getElementById('newCatInput').value = '';
+            document.getElementById('newCatRow').classList.add('hidden');
+            document.getElementById('prodModalTitle').textContent = 'إضافة منتج جديد';
         };
         window.saveProduct = async () => {
             const code = document.getElementById('prodCode').value.trim();
             const name = document.getElementById('prodName').value.trim();
             const price = parseFloat(document.getElementById('prodPrice').value);
-            const cat = document.getElementById('prodCat').value;
+            let cat = document.getElementById('prodCat').value;
+            if (cat === '__new__') cat = document.getElementById('newCatInput').value.trim() || 'أخرى';
             if (!name || !price) { alert('املأ البيانات'); return; }
             await addDoc(collection(db, "products"), { code: code || '', name, price, category: cat, createdAt: serverTimestamp(), createdBy: currentUser.uid });
             closeProductModal();
             loadProductsTable();
             loadPosProducts();
             loadStats();
+            loadCategories();
         };
 
         async function loadProductsTable() {
@@ -540,8 +656,9 @@
                 let html = '';
                 snap.forEach(d => {
                     const inv = d.data();
+                    const invNum = inv.invoiceNumber || d.id.slice(-6);
                     const date = inv.createdAt ? new Date(inv.createdAt.toDate()).toLocaleString('ar-EG') : '-';
-                    html += `<tr><td><strong>#${d.id.slice(-6)}</strong></td><td>${date}</td><td>${inv.itemCount || 0} عنصر</td><td style="color:var(--primary);font-weight:800;">${inv.total || 0} ج.م</td><td>${inv.cashierName || '-'}</td><td><button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-eye"></i></button><button class="btn btn-red" onclick="deleteInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-trash"></i></button></td></tr>`;
+                    html += `<tr><td><strong>#${invNum}</strong></td><td>${date}</td><td>${inv.itemCount || 0} عنصر</td><td style="color:var(--primary);font-weight:800;">${inv.total || 0} ج.م</td><td>${inv.cashierName || '-'}</td><td><button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-eye"></i></button><button class="btn btn-red" onclick="deleteInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-trash"></i></button></td></tr>`;
                 });
                 tbody.innerHTML = html;
             } catch (e) { tbody.innerHTML = '<tr><td colspan="6" class="empty">خطأ</td></tr>'; }
@@ -551,7 +668,7 @@
             const d = await getDoc(doc(db, "invoices", id));
             if (!d.exists()) return;
             const inv = d.data();
-            showInvoice(d.id, inv.items || [], inv.total || 0);
+            showInvoice(d.id, inv.invoiceNumber || d.id.slice(-6), inv.items || [], inv.total || 0);
         };
         window.deleteInvoice = async (id) => {
             if (!confirm('هل أنت متأكد من حذف الفاتورة؟')) return;
@@ -559,7 +676,18 @@
             loadInvoicesTable();
             loadStats();
         };
+
+        window.resetInvoiceCounter = async () => {
+            if (!isAdmin) { alert('للمدير فقط'); return; }
+            if (!confirm('هل أنت متأكد من إعادة ترقيم الفواتير من 1؟')) return;
+            try {
+                await setDoc(doc(db, "settings", "invoiceCounter"), { value: 0, resetAt: serverTimestamp(), resetBy: currentUser.uid });
+                alert('تم إعادة ضبط الترقيم. الفاتورة القادمة ستكون رقم 1.');
+            } catch (e) { alert('خطأ: ' + e.message); }
+        };
+
         window.printDayReport = () => { window.print(); };
+        window.printReports = () => { window.print(); };
 
         async function loadReports() {
             try {
@@ -659,10 +787,10 @@
 
         async function loadUsersTable() {
             const tbody = document.getElementById('usersBody');
-            tbody.innerHTML = '<tr><td colspan="8" class="empty"><div class="spin"></div></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="empty"><div class="spin"></div></td></tr>';
             try {
                 const snap = await getDocs(collection(db, "users"));
-                if (snap.empty) { tbody.innerHTML = '<tr><td colspan="8" class="empty"><i class="fas fa-users"></i><p>لا يوجد مستخدمين</p></td></tr>'; return; }
+                if (snap.empty) { tbody.innerHTML = '<tr><td colspan="9" class="empty"><i class="fas fa-users"></i><p>لا يوجد مستخدمين</p></td></tr>'; return; }
                 let html = '', count = 0;
                 const now = new Date();
                 snap.forEach(d => {
@@ -684,6 +812,14 @@
                         else daysBadge = `<span class="days-left days-grn">${dl} يوم</span>`;
                     } else daysBadge = '<span class="tag tag-blu">غير محدد</span>';
 
+                    // Online / Offline status
+                    let onlineStatus = '<span class="offline-dot"></span>غير متصل';
+                    if (u.lastSeen && u.lastSeen.toDate) {
+                        const ls = u.lastSeen.toDate();
+                        const diffMin = (now - ls) / (1000 * 60);
+                        if (diffMin <= 5) onlineStatus = '<span class="online-dot"></span>متصل';
+                    }
+
                     const status = (u.status === 'active' && !isExpired) || isAdminUser ? '<span class="tag tag-grn">نشط</span>' : '<span class="tag tag-red">معطل</span>';
                     const roleTag = `<span class="tag tag-blu">${roleName(u.role)}</span>`;
                     let acts = '';
@@ -693,10 +829,10 @@
                         acts += ` <button class="btn btn-red" onclick="deleteUser('${d.id}')" style="padding:5px 10px;"><i class="fas fa-trash"></i></button>`;
                     } else acts = '<span style="color:#ccc;">-</span>';
 
-                    html += `<tr><td>${count}</td><td><strong>${u.fullName || '-'}</strong></td><td>${u.email}</td><td>${roleTag}</td><td>${status}</td><td>${daysBadge}</td><td>${created}</td><td>${acts}</td></tr>`;
+                    html += `<tr><td>${count}</td><td><strong>${u.fullName || '-'}</strong></td><td>${u.email}</td><td>${roleTag}</td><td>${status}</td><td>${daysBadge}</td><td>${onlineStatus}</td><td>${created}</td><td>${acts}</td></tr>`;
                 });
                 tbody.innerHTML = html;
-            } catch (e) { tbody.innerHTML = '<tr><td colspan="8" class="empty">خطأ</td></tr>'; }
+            } catch (e) { tbody.innerHTML = '<tr><td colspan="9" class="empty">خطأ</td></tr>'; }
         }
 
         window.extendUser = async (uid) => {
