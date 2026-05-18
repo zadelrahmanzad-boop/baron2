@@ -84,16 +84,39 @@
         .empty i { font-size: 50px; margin-bottom: 15px; color: #ddd; display: block; }
         .spin { width: 28px; height: 28px; border: 3px solid #f3f3f3; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .pos-grid { display: grid; grid-template-columns: 1fr 380px; gap: 25px; }
-        .pos-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; max-height: 75vh; overflow-y: auto; padding-right: 5px; }
+
+        /* ====== POS GRID & PRODUCTS ====== */
+        .pos-grid { display: grid; grid-template-columns: 1fr 420px; gap: 25px; }
+        .pos-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 15px; max-height: 75vh; overflow-y: auto; padding-right: 5px; }
         .pos-products::-webkit-scrollbar { width: 6px; }
         .pos-products::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
-        .product-card { background: white; border-radius: 16px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s; border: 2px solid transparent; box-shadow: 0 3px 15px rgba(0,0,0,0.06); }
+
+        /* Product Card with Category Image */
+        .product-card { background: white; border-radius: 16px; padding: 0; text-align: center; cursor: pointer; transition: all 0.3s; border: 2px solid transparent; box-shadow: 0 3px 15px rgba(0,0,0,0.06); overflow: hidden; position: relative; }
         .product-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 8px 25px rgba(233,69,96,0.15); }
-        .product-card .code { font-size: 11px; color: #aaa; font-weight: 700; margin-bottom: 6px; }
-        .product-card .name { font-size: 14px; font-weight: 700; color: var(--dark); margin-bottom: 8px; line-height: 1.4; min-height: 40px; display: flex; align-items: center; justify-content: center; }
+        .product-card .cat-img { width: 100%; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: white; position: relative; }
+        .product-card .cat-img i { font-size: 40px; }
+        .product-card .cat-img .cat-label { position: absolute; bottom: 5px; left: 8px; background: rgba(0,0,0,0.4); color: white; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+        .product-card .prod-body { padding: 12px; }
+        .product-card .code { font-size: 11px; color: #aaa; font-weight: 700; margin-bottom: 4px; }
+        .product-card .name { font-size: 14px; font-weight: 700; color: var(--dark); margin-bottom: 6px; line-height: 1.3; min-height: 36px; display: flex; align-items: center; justify-content: center; }
         .product-card .price { font-size: 18px; font-weight: 800; color: var(--primary); }
         .product-card .price span { font-size: 12px; color: #888; }
+
+        /* Category Colors */
+        .cat-chicken { background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%); }
+        .cat-burger { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .cat-sides { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .cat-drinks { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .cat-other { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+
+        /* Category Filter Tabs */
+        .cat-tabs { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+        .cat-tab { padding: 8px 16px; border-radius: 12px; border: 2px solid #e0e0e0; background: white; color: #666; cursor: pointer; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 13px; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+        .cat-tab:hover { border-color: var(--primary); color: var(--primary); }
+        .cat-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .cat-tab i { font-size: 14px; }
+
         .cart-panel { background: white; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 20px; display: flex; flex-direction: column; height: fit-content; position: sticky; top: 90px; }
         .cart-panel h3 { font-size: 18px; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
         .cart-items { flex: 1; max-height: 350px; overflow-y: auto; margin-bottom: 15px; }
@@ -107,16 +130,41 @@
         .cart-qty span { font-weight: 700; min-width: 20px; text-align: center; }
         .cart-total { border-top: 2px solid var(--dark); padding-top: 15px; margin-bottom: 15px; }
         .cart-total-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        .cart-total-row.discount { color: var(--success); }
+        .cart-total-row.delivery { color: var(--warning); }
         .cart-total-row.final { font-size: 20px; font-weight: 800; color: var(--primary); margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; }
         .checkout-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; border-radius: 14px; font-size: 18px; font-weight: 800; cursor: pointer; font-family: 'Cairo', sans-serif; transition: all 0.3s; }
         .checkout-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(233,69,96,0.3); }
         .checkout-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .clear-cart { text-align: center; margin-top: 10px; color: #aaa; font-size: 13px; cursor: pointer; }
         .clear-cart:hover { color: var(--danger); }
+
+        /* ====== CHECKOUT MODAL ====== */
+        .payment-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .pay-method { border: 2px solid #e0e0e0; border-radius: 14px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .pay-method:hover { border-color: var(--primary); }
+        .pay-method.active { border-color: var(--primary); background: #fde8eb; }
+        .pay-method i { font-size: 28px; margin-bottom: 6px; display: block; }
+        .pay-method span { font-size: 13px; font-weight: 700; }
+        .pay-method.cash i { color: var(--success); }
+        .pay-method.visa i { color: var(--info); }
+        .pay-method.delivery i { color: var(--warning); }
+
+        .calc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+        .calc-btn { padding: 14px; border: 2px solid #e8e8e8; border-radius: 12px; background: white; font-family: 'Cairo', sans-serif; font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .calc-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .calc-btn.wide { grid-column: span 2; }
+        .calc-btn.ac { background: #fff3cd; color: var(--warning); border-color: var(--warning); }
+        .calc-display { background: #f8f9fa; padding: 15px; border-radius: 12px; text-align: left; font-size: 24px; font-weight: 800; color: var(--dark); margin-bottom: 10px; direction: ltr; }
+        .calc-display .label { font-size: 11px; color: #888; font-weight: 600; text-align: right; direction: rtl; margin-bottom: 4px; }
+        .calc-display .change { font-size: 14px; color: var(--success); font-weight: 700; margin-top: 4px; }
+        .calc-display .change.negative { color: var(--danger); }
+
         .modal-bg { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
         .modal-bg.show { display: flex; }
         .modal-box { background: white; border-radius: 20px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 30px; animation: popIn 0.3s ease; }
         .modal-box.wide { max-width: 650px; }
+        .modal-box.xwide { max-width: 750px; }
         @keyframes popIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         .modal-box h2 { font-size: 20px; margin-bottom: 25px; color: var(--dark); }
         .modal-close { float: left; background: none; border: none; font-size: 24px; cursor: pointer; color: #aaa; }
@@ -124,9 +172,14 @@
         .form-row label { display: block; margin-bottom: 7px; font-weight: 700; font-size: 14px; color: #444; }
         .form-row input, .form-row select { width: 100%; padding: 12px 15px; border: 2px solid #e8e8e8; border-radius: 12px; font-size: 15px; font-family: 'Cairo', sans-serif; }
         .form-row input:focus, .form-row select:focus { outline: none; border-color: var(--primary); }
+        .form-row .input-group { display: flex; gap: 8px; }
+        .form-row .input-group input { flex: 1; }
+        .form-row .input-group button { padding: 0 16px; border-radius: 10px; border: none; background: var(--primary); color: white; cursor: pointer; font-family: 'Cairo', sans-serif; font-weight: 700; white-space: nowrap; }
         .modal-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px; }
         .modal-foot button { padding: 10px 24px; border-radius: 10px; border: none; cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 700; }
         .hidden { display: none !important; }
+
+        /* Invoice Print */
         .invoice-print { background: white; padding: 30px; max-width: 400px; margin: 0 auto; font-family: 'Cairo', sans-serif; }
         .invoice-print h2 { text-align: center; margin-bottom: 5px; }
         .invoice-print .inv-info { text-align: center; font-size: 13px; color: #666; margin-bottom: 20px; }
@@ -134,6 +187,7 @@
         .invoice-print th { text-align: right; padding: 8px 0; border-bottom: 2px solid #333; }
         .invoice-print td { padding: 8px 0; border-bottom: 1px solid #eee; }
         .invoice-print .inv-total { text-align: left; font-size: 18px; font-weight: 800; margin-top: 15px; padding-top: 10px; border-top: 2px solid #333; }
+        .invoice-print .inv-payment { text-align: center; margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 8px; font-size: 13px; font-weight: 700; }
         .online-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); margin-left: 6px; animation: pulse 2s infinite; }
         .offline-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #bbb; margin-left: 6px; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
@@ -242,9 +296,32 @@
                 <div class="stat-box s4"><div class="stat-icon"><i class="fas fa-receipt"></i></div><div class="stat-label">إجمالي الفواتير</div><div class="stat-num" id="stInvoices">0</div></div>
             </div>
 
+            <!-- POS SECTION -->
             <div class="section-view active" id="view-pos">
                 <div class="pos-grid">
                     <div>
+                        <!-- Category Filter Tabs -->
+                        <div class="cat-tabs" id="catTabs">
+                            <div class="cat-tab active" onclick="filterByCategory('all')">
+                                <i class="fas fa-th-large"></i> الكل
+                            </div>
+                            <div class="cat-tab" onclick="filterByCategory('تشكن')">
+                                <i class="fas fa-drumstick-bite"></i> تشكن
+                            </div>
+                            <div class="cat-tab" onclick="filterByCategory('برجر')">
+                                <i class="fas fa-hamburger"></i> برجر
+                            </div>
+                            <div class="cat-tab" onclick="filterByCategory('سايدز')">
+                                <i class="fas fa-cookie-bite"></i> سايدز
+                            </div>
+                            <div class="cat-tab" onclick="filterByCategory('مشروبات')">
+                                <i class="fas fa-glass-whiskey"></i> مشروبات
+                            </div>
+                            <div class="cat-tab" onclick="filterByCategory('أخرى')">
+                                <i class="fas fa-ellipsis-h"></i> أخرى
+                            </div>
+                        </div>
+
                         <div class="card-head" style="margin-bottom:15px;background:white;border-radius:18px;padding:15px 20px;">
                             <h3>قائمة المنتجات</h3>
                             <div class="btns"><button class="btn btn-gry" onclick="loadPosProducts()"><i class="fas fa-sync-alt"></i> تحديث</button></div>
@@ -256,14 +333,17 @@
                         <div class="cart-items" id="cartItems"><div class="empty" style="padding:30px 0;"><i class="fas fa-cart-plus" style="font-size:40px;color:#eee;"></i><p>اضغط على منتج لإضافته</p></div></div>
                         <div class="cart-total">
                             <div class="cart-total-row"><span>المجموع:</span><span id="subTotal">0 ج.م</span></div>
+                            <div class="cart-total-row discount"><span>الخصم:</span><span id="discountDisplay">0 ج.م</span></div>
+                            <div class="cart-total-row delivery"><span>التوصيل:</span><span id="deliveryDisplay">0 ج.م</span></div>
                             <div class="cart-total-row final"><span>الإجمالي:</span><span id="finalTotal">0 ج.م</span></div>
                         </div>
-                        <button class="checkout-btn" id="checkoutBtn" onclick="checkout()" disabled>إتمام البيع</button>
+                        <button class="checkout-btn" id="checkoutBtn" onclick="openCheckoutModal()" disabled>إتمام البيع</button>
                         <div class="clear-cart" onclick="clearCart()">إفراغ السلة</div>
                     </div>
                 </div>
             </div>
 
+            <!-- PRODUCTS SECTION -->
             <div class="section-view" id="view-products">
                 <div class="card">
                     <div class="card-head">
@@ -280,6 +360,7 @@
                 </div>
             </div>
 
+            <!-- INVOICES SECTION -->
             <div class="section-view" id="view-invoices">
                 <div class="card">
                     <div class="card-head">
@@ -291,12 +372,13 @@
                         </div>
                     </div>
                     <table>
-                        <thead><tr><th>رقم الفاتورة</th><th>الوقت</th><th>العناصر</th><th>المبلغ</th><th>الكاشير</th><th>إجراءات</th></tr></thead>
-                        <tbody id="invoicesBody"><tr><td colspan="6" class="empty"><div class="spin"></div></td></tr></tbody>
+                        <thead><tr><th>رقم الفاتورة</th><th>الوقت</th><th>العناصر</th><th>المبلغ</th><th>التوصيل</th><th>الخصم</th><th>الإجمالي</th><th>الدفع</th><th>الكاشير</th><th>إجراءات</th></tr></thead>
+                        <tbody id="invoicesBody"><tr><td colspan="10" class="empty"><div class="spin"></div></td></tr></tbody>
                     </table>
                 </div>
             </div>
 
+            <!-- REPORTS SECTION -->
             <div class="section-view" id="view-reports">
                 <div class="stats-row">
                     <div class="stat-box s1"><div class="stat-icon"><i class="fas fa-calendar-day"></i></div><div class="stat-label">مبيعات اليوم</div><div class="stat-num" id="repTodaySales">0 ج.م</div></div>
@@ -319,6 +401,7 @@
                 </div>
             </div>
 
+            <!-- USERS SECTION -->
             <div class="section-view" id="view-users">
                 <div class="tabs">
                     <button class="tab-btn active" onclick="switchUserTab('users')" id="tabUsers">المستخدمين</button>
@@ -361,11 +444,18 @@
         </div>
     </div>
 
+    <!-- Product Modal -->
     <div class="modal-bg" id="productModal">
         <div class="modal-box">
             <button class="modal-close" onclick="closeProductModal()">&times;</button>
             <h2 id="prodModalTitle">إضافة منتج جديد</h2>
-            <div class="form-row"><label>كود المنتج</label><input type="text" id="prodCode" placeholder="#1001"></div>
+            <div class="form-row">
+                <label>كود المنتج</label>
+                <div class="input-group">
+                    <input type="text" id="prodCode" placeholder="#1001" readonly style="background:#f5f5f5;">
+                    <button onclick="generateProductCode()"><i class="fas fa-magic"></i> توليد</button>
+                </div>
+            </div>
             <div class="form-row"><label>اسم المنتج</label><input type="text" id="prodName" placeholder="تشكن بروست"></div>
             <div class="form-row"><label>السعر (ج.م)</label><input type="number" id="prodPrice" placeholder="165"></div>
             <div class="form-row">
@@ -387,6 +477,97 @@
         </div>
     </div>
 
+    <!-- Checkout Modal -->
+    <div class="modal-bg" id="checkoutModal">
+        <div class="modal-box xwide">
+            <button class="modal-close" onclick="closeCheckoutModal()">&times;</button>
+            <h2><i class="fas fa-cash-register" style="color:var(--primary);"></i> إتمام عملية البيع</h2>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                <div>
+                    <div class="form-row">
+                        <label>طريقة الدفع</label>
+                        <div class="payment-methods">
+                            <div class="pay-method cash active" onclick="selectPayment('cash')">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <span>كاش</span>
+                            </div>
+                            <div class="pay-method visa" onclick="selectPayment('visa')">
+                                <i class="fas fa-credit-card"></i>
+                                <span>فيزا</span>
+                            </div>
+                            <div class="pay-method delivery" onclick="selectPayment('delivery')">
+                                <i class="fas fa-motorcycle"></i>
+                                <span>ديليفري</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>سعر التوصيل (ج.م)</label>
+                        <input type="number" id="deliveryFee" value="0" min="0" onchange="updateCheckoutTotals()" oninput="updateCheckoutTotals()">
+                    </div>
+
+                    <div class="form-row">
+                        <label>الخصم (ج.م)</label>
+                        <input type="number" id="discountAmount" value="0" min="0" onchange="updateCheckoutTotals()" oninput="updateCheckoutTotals()">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="form-row">
+                        <label>ملخص الفاتورة</label>
+                        <div style="background:#f8f9fa;padding:15px;border-radius:12px;">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;">
+                                <span>المجموع:</span><span id="chkSubTotal" style="font-weight:700;">0 ج.م</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:var(--success);">
+                                <span>الخصم:</span><span id="chkDiscount" style="font-weight:700;">0 ج.م</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:var(--warning);">
+                                <span>التوصيل:</span><span id="chkDelivery" style="font-weight:700;">0 ج.م</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:2px dashed #ddd;font-size:18px;font-weight:800;color:var(--primary);">
+                                <span>الإجمالي:</span><span id="chkFinalTotal">0 ج.م</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>المبلغ المدفوع (ج.م)</label>
+                        <div class="calc-display" id="calcDisplay">
+                            <div class="label">المبلغ المدفوع</div>
+                            <div id="paidAmountDisplay">0</div>
+                            <div class="change" id="changeDisplay">المتبقي: 0 ج.م</div>
+                        </div>
+                        <div class="calc-grid">
+                            <button class="calc-btn" onclick="calcInput('7')">7</button>
+                            <button class="calc-btn" onclick="calcInput('8')">8</button>
+                            <button class="calc-btn" onclick="calcInput('9')">9</button>
+                            <button class="calc-btn" onclick="calcInput('4')">4</button>
+                            <button class="calc-btn" onclick="calcInput('5')">5</button>
+                            <button class="calc-btn" onclick="calcInput('6')">6</button>
+                            <button class="calc-btn" onclick="calcInput('1')">1</button>
+                            <button class="calc-btn" onclick="calcInput('2')">2</button>
+                            <button class="calc-btn" onclick="calcInput('3')">3</button>
+                            <button class="calc-btn" onclick="calcInput('0')">0</button>
+                            <button class="calc-btn" onclick="calcInput('00')">00</button>
+                            <button class="calc-btn" onclick="calcBackspace()"><i class="fas fa-backspace"></i></button>
+                            <button class="calc-btn wide ac" onclick="calcClear()">مسح</button>
+                            <button class="calc-btn" onclick="setExactAmount()" style="background:var(--success);color:white;border-color:var(--success);">المبلغ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-foot">
+                <button class="btn btn-gry" onclick="closeCheckoutModal()">إلغاء</button>
+                <button class="btn btn-main" onclick="processCheckout()" id="processCheckoutBtn" disabled><i class="fas fa-check-circle"></i> تأكيد وطباعة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
     <div class="modal-bg" id="userModal">
         <div class="modal-box">
             <button class="modal-close" onclick="closeUserModal()">&times;</button>
@@ -401,6 +582,7 @@
         </div>
     </div>
 
+    <!-- Edit User Modal -->
     <div class="modal-bg" id="editUserModal">
         <div class="modal-box wide">
             <button class="modal-close" onclick="closeEditUserModal()">&times;</button>
@@ -433,6 +615,7 @@
         </div>
     </div>
 
+    <!-- Invoice Modal -->
     <div class="modal-bg" id="invoiceModal">
         <div class="modal-box" style="max-width:450px;"><button class="modal-close" onclick="closeInvoiceModal()">&times;</button><div id="invoiceDetailContent"></div></div>
     </div>
@@ -458,9 +641,20 @@
         let productCategories = ["تشكن", "برجر", "سايدز", "مشروبات", "أخرى"];
         let currentSessionId = null;
         let maintenanceUnsub = null;
+        let currentFilter = 'all';
+        let checkoutData = { paymentMethod: 'cash', deliveryFee: 0, discount: 0, paidAmount: 0 };
 
         const DEFAULT_PERMS = { pos: true, products: true, invoices: true, reports: true, users: false, settings: false };
         const PERM_LABELS = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين', settings: 'الإعدادات' };
+
+        // Category icons mapping
+        const CAT_ICONS = {
+            'تشكن': { icon: 'fa-drumstick-bite', class: 'cat-chicken' },
+            'برجر': { icon: 'fa-hamburger', class: 'cat-burger' },
+            'سايدز': { icon: 'fa-cookie-bite', class: 'cat-sides' },
+            'مشروبات': { icon: 'fa-glass-whiskey', class: 'cat-drinks' },
+            'أخرى': { icon: 'fa-ellipsis-h', class: 'cat-other' }
+        };
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/"; return; }
@@ -469,7 +663,6 @@
             if (ud.exists()) {
                 userData = ud.data();
 
-                // Check if already logged in on another device (skip for admin)
                 if (userData.role !== 'admin' && userData.isLoggedIn === true) {
                     const diffMin = userData.lastSeen && userData.lastSeen.toDate
                         ? (new Date() - userData.lastSeen.toDate()) / (1000 * 60)
@@ -510,7 +703,6 @@
                     document.getElementById('btnResetInv').style.display = 'inline-flex';
                 }
 
-                // Record login
                 await recordLogin(user.uid);
             } else {
                 document.getElementById('uName').textContent = user.email;
@@ -519,9 +711,7 @@
                 await recordLogin(user.uid);
             }
 
-            // Listen for maintenance mode
             listenMaintenanceMode();
-
             updateLastSeen();
             setInterval(updateLastSeen, 60000);
             loadPosProducts();
@@ -583,8 +773,6 @@
                     startedBy: currentUser.uid,
                     startedByName: userData?.fullName || currentUser.email
                 });
-
-                // Force logout all users except admin
                 const usersSnap = await getDocs(collection(db, "users"));
                 const batch = [];
                 usersSnap.forEach((d) => {
@@ -598,7 +786,6 @@
                     }
                 });
                 await Promise.all(batch);
-
                 alert('تم تفعيل وضع الصيانة وإغلاق جميع الجلسات.');
             } catch (e) { alert('خطأ: ' + e.message); }
         };
@@ -611,8 +798,6 @@
                     endedAt: serverTimestamp(),
                     endedBy: currentUser.uid
                 }, { merge: true });
-
-                // Clear forceLogout flags for non-admin users
                 const usersSnap = await getDocs(collection(db, "users"));
                 const batch = [];
                 usersSnap.forEach((d) => {
@@ -625,7 +810,6 @@
                     }
                 });
                 await Promise.all(batch);
-
                 alert('تم إيقاف وضع الصيانة.');
             } catch (e) { alert('خطأ: ' + e.message); }
         };
@@ -661,7 +845,6 @@
             window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
         };
 
-        // Check forceLogout every 10 seconds (skip for admin)
         setInterval(async () => {
             if (!currentUser || userData?.role === 'admin') return;
             try {
@@ -736,6 +919,30 @@
             document.getElementById('newCatInput').value = '';
         };
 
+        // ========== AUTO GENERATE PRODUCT CODE ==========
+        window.generateProductCode = async () => {
+            try {
+                const snap = await getDocs(collection(db, "products"));
+                let maxCode = 1000;
+                snap.forEach(d => {
+                    const code = d.data().code;
+                    if (code && code.startsWith('#')) {
+                        const num = parseInt(code.replace('#', ''));
+                        if (num > maxCode) maxCode = num;
+                    }
+                });
+                const newCode = '#' + (maxCode + 1);
+                document.getElementById('prodCode').value = newCode;
+            } catch (e) {
+                document.getElementById('prodCode').value = '#' + (Math.floor(Math.random() * 9000) + 1000);
+            }
+        };
+
+        function getCategoryIcon(cat) {
+            const catData = CAT_ICONS[cat] || { icon: 'fa-utensils', class: 'cat-other' };
+            return catData;
+        }
+
         async function loadPosProducts() {
             const box = document.getElementById('posProducts');
             try {
@@ -763,11 +970,44 @@
                     const p = d.data();
                     p.id = d.id;
                     allProducts.push(p);
-                    html += `<div class="product-card" onclick="addToCart('${d.id}')"><div class="code">${p.code || ''}</div><div class="name">${p.name}</div><div class="price">${p.price} <span>ج.م</span></div></div>`;
                 });
-                box.innerHTML = html;
+                renderProductsGrid();
             } catch (e) { box.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;">خطأ</div>'; }
         }
+
+        function renderProductsGrid() {
+            const box = document.getElementById('posProducts');
+            let html = '';
+            const filtered = currentFilter === 'all' ? allProducts : allProducts.filter(p => p.category === currentFilter);
+
+            if (filtered.length === 0) {
+                box.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#aaa;"><i class="fas fa-box-open" style="font-size:40px;margin-bottom:10px;"></i><p>لا توجد منتجات في هذا التصنيف</p></div>';
+                return;
+            }
+
+            filtered.forEach(p => {
+                const catData = getCategoryIcon(p.category);
+                html += `<div class="product-card" onclick="addToCart('${p.id}')">
+                    <div class="cat-img ${catData.class}">
+                        <i class="fas ${catData.icon}"></i>
+                        <span class="cat-label">${p.category || 'أخرى'}</span>
+                    </div>
+                    <div class="prod-body">
+                        <div class="code">${p.code || ''}</div>
+                        <div class="name">${p.name}</div>
+                        <div class="price">${p.price} <span>ج.م</span></div>
+                    </div>
+                </div>`;
+            });
+            box.innerHTML = html;
+        }
+
+        window.filterByCategory = (cat) => {
+            currentFilter = cat;
+            document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            renderProductsGrid();
+        };
 
         window.addToCart = (pid) => {
             const p = allProducts.find(x => x.id === pid);
@@ -797,20 +1037,131 @@
                 btn.disabled = true;
                 document.getElementById('cartCount').textContent = '(0)';
                 document.getElementById('subTotal').textContent = '0 ج.م';
+                document.getElementById('discountDisplay').textContent = '0 ج.م';
+                document.getElementById('deliveryDisplay').textContent = '0 ج.م';
                 document.getElementById('finalTotal').textContent = '0 ج.م';
                 return;
             }
-            let html = '', total = 0;
+            let html = '', subTotal = 0;
             cart.forEach(item => {
                 const itemTotal = item.price * item.qty;
-                total += itemTotal;
+                subTotal += itemTotal;
                 html += `<div class="cart-item"><div class="cart-item-info"><div class="cart-item-name">${item.name}</div><div class="cart-item-price">${item.price} ج.م × ${item.qty}</div></div><div class="cart-qty"><button onclick="changeQty('${item.id}', -1)">−</button><span>${item.qty}</span><button onclick="changeQty('${item.id}', 1)">+</button></div><div style="font-weight:800;min-width:60px;text-align:left;">${itemTotal} ج.م</div><button class="btn btn-red" style="padding:4px 8px;margin-right:8px;" onclick="removeFromCart('${item.id}')"><i class="fas fa-times"></i></button></div>`;
             });
             box.innerHTML = html;
             document.getElementById('cartCount').textContent = '(' + cart.reduce((s, i) => s + i.qty, 0) + ')';
-            document.getElementById('subTotal').textContent = total + ' ج.م';
-            document.getElementById('finalTotal').textContent = total + ' ج.م';
+            document.getElementById('subTotal').textContent = subTotal.toLocaleString('ar-EG') + ' ج.م';
+            document.getElementById('discountDisplay').textContent = '0 ج.م';
+            document.getElementById('deliveryDisplay').textContent = '0 ج.م';
+            document.getElementById('finalTotal').textContent = subTotal.toLocaleString('ar-EG') + ' ج.م';
             btn.disabled = false;
+        }
+
+        // ========== CHECKOUT MODAL ==========
+        window.openCheckoutModal = () => {
+            if (cart.length === 0) return;
+            checkoutData = { paymentMethod: 'cash', deliveryFee: 0, discount: 0, paidAmount: 0 };
+            document.getElementById('deliveryFee').value = 0;
+            document.getElementById('discountAmount').value = 0;
+            document.getElementById('paidAmountDisplay').textContent = '0';
+            document.getElementById('changeDisplay').textContent = 'المتبقي: 0 ج.م';
+            document.getElementById('changeDisplay').className = 'change';
+            selectPayment('cash');
+            updateCheckoutTotals();
+            document.getElementById('checkoutModal').classList.add('show');
+        };
+
+        window.closeCheckoutModal = () => {
+            document.getElementById('checkoutModal').classList.remove('show');
+        };
+
+        window.selectPayment = (method) => {
+            checkoutData.paymentMethod = method;
+            document.querySelectorAll('.pay-method').forEach(el => el.classList.remove('active'));
+            document.querySelector('.pay-method.' + method).classList.add('active');
+
+            // Auto-set delivery fee for delivery payment
+            if (method === 'delivery') {
+                const currentFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
+                if (currentFee === 0) {
+                    document.getElementById('deliveryFee').value = 15;
+                }
+            }
+            updateCheckoutTotals();
+        };
+
+        window.updateCheckoutTotals = () => {
+            const subTotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
+            const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+            const finalTotal = Math.max(0, subTotal + deliveryFee - discount);
+
+            checkoutData.deliveryFee = deliveryFee;
+            checkoutData.discount = discount;
+
+            document.getElementById('chkSubTotal').textContent = subTotal.toLocaleString('ar-EG') + ' ج.م';
+            document.getElementById('chkDiscount').textContent = discount.toLocaleString('ar-EG') + ' ج.م';
+            document.getElementById('chkDelivery').textContent = deliveryFee.toLocaleString('ar-EG') + ' ج.م';
+            document.getElementById('chkFinalTotal').textContent = finalTotal.toLocaleString('ar-EG') + ' ج.م';
+
+            // Update cart panel display too
+            document.getElementById('discountDisplay').textContent = discount.toLocaleString('ar-EG') + ' ج.م';
+            document.getElementById('deliveryDisplay').textContent = deliveryFee.toLocaleString('ar-EG') + ' ج.م';
+            document.getElementById('finalTotal').textContent = finalTotal.toLocaleString('ar-EG') + ' ج.م';
+
+            updateChangeDisplay();
+        };
+
+        // Calculator functions
+        let calcInputValue = '';
+        window.calcInput = (val) => {
+            calcInputValue += val;
+            updateCalcDisplay();
+        };
+        window.calcBackspace = () => {
+            calcInputValue = calcInputValue.slice(0, -1);
+            updateCalcDisplay();
+        };
+        window.calcClear = () => {
+            calcInputValue = '';
+            updateCalcDisplay();
+        };
+        window.setExactAmount = () => {
+            const subTotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
+            const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+            const finalTotal = Math.max(0, subTotal + deliveryFee - discount);
+            calcInputValue = finalTotal.toString();
+            updateCalcDisplay();
+        };
+
+        function updateCalcDisplay() {
+            const val = calcInputValue === '' ? 0 : parseFloat(calcInputValue);
+            document.getElementById('paidAmountDisplay').textContent = val.toLocaleString('ar-EG');
+            checkoutData.paidAmount = val;
+            updateChangeDisplay();
+        }
+
+        function updateChangeDisplay() {
+            const subTotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
+            const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+            const finalTotal = Math.max(0, subTotal + deliveryFee - discount);
+            const paid = checkoutData.paidAmount || 0;
+            const change = paid - finalTotal;
+
+            const changeEl = document.getElementById('changeDisplay');
+            const btn = document.getElementById('processCheckoutBtn');
+
+            if (change >= 0) {
+                changeEl.textContent = 'المتبقي: ' + change.toLocaleString('ar-EG') + ' ج.م';
+                changeEl.className = 'change';
+                btn.disabled = false;
+            } else {
+                changeEl.textContent = 'ناقص: ' + Math.abs(change).toLocaleString('ar-EG') + ' ج.م';
+                changeEl.className = 'change negative';
+                btn.disabled = true;
+            }
         }
 
         async function getNextInvoiceNumber() {
@@ -829,40 +1180,82 @@
             }
         }
 
-        window.checkout = async () => {
-            if (cart.length === 0) return;
-            const btn = document.getElementById('checkoutBtn');
+        window.processCheckout = async () => {
+            const subTotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const deliveryFee = checkoutData.deliveryFee || 0;
+            const discount = checkoutData.discount || 0;
+            const finalTotal = Math.max(0, subTotal + deliveryFee - discount);
+            const paidAmount = checkoutData.paidAmount || 0;
+            const change = paidAmount - finalTotal;
+
+            if (change < 0) { alert('المبلغ المدفوع غير كافٍ!'); return; }
+
+            const btn = document.getElementById('processCheckoutBtn');
             btn.disabled = true;
-            btn.textContent = 'جاري الحفظ...';
-            const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+
             const items = cart.map(i => ({ name: i.name, price: i.price, qty: i.qty, total: i.price * i.qty }));
             try {
                 const invoiceNumber = await getNextInvoiceNumber();
                 const invRef = await addDoc(collection(db, "invoices"), {
                     invoiceNumber: invoiceNumber,
-                    items: items, total: total, itemCount: cart.reduce((s, i) => s + i.qty, 0),
-                    cashierId: currentUser.uid, cashierName: userData?.fullName || currentUser.email,
+                    items: items,
+                    subTotal: subTotal,
+                    deliveryFee: deliveryFee,
+                    discount: discount,
+                    total: finalTotal,
+                    paidAmount: paidAmount,
+                    change: change,
+                    paymentMethod: checkoutData.paymentMethod,
+                    itemCount: cart.reduce((s, i) => s + i.qty, 0),
+                    cashierId: currentUser.uid,
+                    cashierName: userData?.fullName || currentUser.email,
                     createdAt: serverTimestamp()
                 });
-                showInvoice(invRef.id, invoiceNumber, items, total);
+                showInvoice(invRef.id, invoiceNumber, items, subTotal, deliveryFee, discount, finalTotal, paidAmount, change, checkoutData.paymentMethod);
                 cart = [];
                 renderCart();
                 loadStats();
-                btn.textContent = 'إتمام البيع';
+                closeCheckoutModal();
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> تأكيد وطباعة';
             } catch (e) {
                 alert('خطأ: ' + e.message);
                 btn.disabled = false;
-                btn.textContent = 'إتمام البيع';
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> تأكيد وطباعة';
             }
         };
 
-        function showInvoice(invId, invoiceNumber, items, total) {
+        function showInvoice(invId, invoiceNumber, items, subTotal, deliveryFee, discount, total, paidAmount, change, paymentMethod) {
             const modal = document.getElementById('invoiceModal');
             const box = document.getElementById('invoiceDetailContent');
             const now = new Date().toLocaleString('ar-EG');
+            const payLabels = { cash: 'كاش', visa: 'فيزا', delivery: 'ديليفري' };
             let rows = '';
             items.forEach(i => { rows += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.total} ج.م</td></tr>`; });
-            box.innerHTML = `<div class="invoice-print"><h2>BARON POS</h2><div class="inv-info">فاتورة رقم: #${invoiceNumber}<br>${now}<br>الكاشير: ${userData?.fullName || currentUser.email}</div><table><thead><tr><th>المنتج</th><th>الكمية</th><th>المبلغ</th></tr></thead><tbody>${rows}</tbody></table><div class="inv-total">الإجمالي: ${total} ج.م</div><div style="text-align:center;margin-top:20px;color:#aaa;font-size:12px;">شكراً لزيارتكم</div><div style="text-align:center;margin-top:15px;"><button class="btn btn-main" onclick="printAndCloseInvoice('${invId}')"><i class="fas fa-print"></i> طباعة وحفظ</button><button class="btn btn-gry" onclick="closeInvoiceModal()">إغلاق</button></div></div>`;
+
+            let extraRows = '';
+            if (deliveryFee > 0) extraRows += `<tr><td colspan="2"><strong>التوصيل</strong></td><td>${deliveryFee} ج.م</td></tr>`;
+            if (discount > 0) extraRows += `<tr><td colspan="2"><strong>الخصم</strong></td><td style="color:var(--success);">-${discount} ج.م</td></tr>`;
+
+            box.innerHTML = `<div class="invoice-print">
+                <h2>BARON POS</h2>
+                <div class="inv-info">فاتورة رقم: #${invoiceNumber}<br>${now}<br>الكاشير: ${userData?.fullName || currentUser.email}</div>
+                <table>
+                    <thead><tr><th>المنتج</th><th>الكمية</th><th>المبلغ</th></tr></thead>
+                    <tbody>${rows}${extraRows}</tbody>
+                </table>
+                <div class="inv-total">الإجمالي: ${total} ج.م</div>
+                <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;">
+                    <span>المبلغ المدفوع: ${paidAmount} ج.م</span>
+                    <span>المتبقي: ${change} ج.م</span>
+                </div>
+                <div class="inv-payment"><i class="fas fa-credit-card"></i> طريقة الدفع: ${payLabels[paymentMethod] || paymentMethod}</div>
+                <div style="text-align:center;margin-top:20px;color:#aaa;font-size:12px;">شكراً لزيارتكم</div>
+                <div style="text-align:center;margin-top:15px;">
+                    <button class="btn btn-main" onclick="printAndCloseInvoice('${invId}')"><i class="fas fa-print"></i> طباعة وحفظ</button>
+                    <button class="btn btn-gry" onclick="closeInvoiceModal()">إغلاق</button>
+                </div>
+            </div>`;
             modal.classList.add('show');
         }
 
@@ -873,7 +1266,10 @@
 
         window.closeInvoiceModal = () => { document.getElementById('invoiceModal').classList.remove('show'); };
 
-        window.openProductModal = () => { document.getElementById('productModal').classList.add('show'); };
+        window.openProductModal = () => { 
+            document.getElementById('productModal').classList.add('show');
+            generateProductCode();
+        };
         window.closeProductModal = () => {
             document.getElementById('productModal').classList.remove('show');
             document.getElementById('prodCode').value = '';
@@ -924,27 +1320,40 @@
 
         async function loadInvoicesTable() {
             const tbody = document.getElementById('invoicesBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="spin"></div></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="empty"><div class="spin"></div></td></tr>';
             try {
                 const q = query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(100));
                 const snap = await getDocs(q);
-                if (snap.empty) { tbody.innerHTML = '<tr><td colspan="6" class="empty"><i class="fas fa-receipt"></i><p>لا توجد فواتير</p></td></tr>'; return; }
+                if (snap.empty) { tbody.innerHTML = '<tr><td colspan="10" class="empty"><i class="fas fa-receipt"></i><p>لا توجد فواتير</p></td></tr>'; return; }
                 let html = '';
                 snap.forEach(d => {
                     const inv = d.data();
                     const invNum = inv.invoiceNumber || d.id.slice(-6);
                     const date = inv.createdAt ? new Date(inv.createdAt.toDate()).toLocaleString('ar-EG') : '-';
-                    html += `<tr><td><strong>#${invNum}</strong></td><td>${date}</td><td>${inv.itemCount || 0} عنصر</td><td style="color:var(--primary);font-weight:800;">${inv.total || 0} ج.م</td><td>${inv.cashierName || '-'}</td><td><button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-eye"></i></button><button class="btn btn-red" onclick="deleteInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-trash"></i></button></td></tr>`;
+                    const payLabels = { cash: 'كاش', visa: 'فيزا', delivery: 'ديليفري' };
+                    const payTag = inv.paymentMethod === 'cash' ? 'tag-grn' : inv.paymentMethod === 'visa' ? 'tag-blu' : 'tag-ylw';
+                    html += `<tr>
+                        <td><strong>#${invNum}</strong></td>
+                        <td>${date}</td>
+                        <td>${inv.itemCount || 0} عنصر</td>
+                        <td style="color:var(--primary);font-weight:800;">${inv.subTotal || inv.total || 0} ج.م</td>
+                        <td>${inv.deliveryFee || 0} ج.م</td>
+                        <td style="color:var(--success);">${inv.discount || 0} ج.م</td>
+                        <td style="font-weight:800;">${inv.total || 0} ج.م</td>
+                        <td><span class="tag ${payTag}">${payLabels[inv.paymentMethod] || inv.paymentMethod}</span></td>
+                        <td>${inv.cashierName || '-'}</td>
+                        <td><button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-eye"></i></button><button class="btn btn-red" onclick="deleteInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
                 });
                 tbody.innerHTML = html;
-            } catch (e) { tbody.innerHTML = '<tr><td colspan="6" class="empty">خطأ</td></tr>'; }
+            } catch (e) { tbody.innerHTML = '<tr><td colspan="10" class="empty">خطأ</td></tr>'; }
         }
 
         window.viewInvoice = async (id) => {
             const d = await getDoc(doc(db, "invoices", id));
             if (!d.exists()) return;
             const inv = d.data();
-            showInvoice(d.id, inv.invoiceNumber || d.id.slice(-6), inv.items || [], inv.total || 0);
+            showInvoice(d.id, inv.invoiceNumber || d.id.slice(-6), inv.items || [], inv.subTotal || inv.total || 0, inv.deliveryFee || 0, inv.discount || 0, inv.total || 0, inv.paidAmount || 0, inv.change || 0, inv.paymentMethod || 'cash');
         };
         window.deleteInvoice = async (id) => {
             if (!confirm('هل أنت متأكد من حذف الفاتورة؟')) return;
@@ -1178,7 +1587,6 @@
                 let html = '', count = 0;
                 const now = new Date();
 
-                // Calculate hours for each user from login_log
                 const logSnap = await getDocs(collection(db, "login_log"));
                 const userHours = {};
                 logSnap.forEach(ld => {
@@ -1225,7 +1633,6 @@
                     });
                     if (!permIcons) permIcons = '<span style="color:#ccc;font-size:12px;">لا توجد</span>';
 
-                    // Hours
                     const hours = userHours[d.id] || 0;
                     const hoursDisplay = hours > 0
                         ? `<span class="hours-badge">${hours.toFixed(1)} س</span>`
