@@ -469,8 +469,8 @@
             if (ud.exists()) {
                 userData = ud.data();
 
-                // Check if already logged in on another device
-                if (userData.isLoggedIn === true) {
+                // Check if already logged in on another device (skip for admin)
+                if (userData.role !== 'admin' && userData.isLoggedIn === true) {
                     const diffMin = userData.lastSeen && userData.lastSeen.toDate
                         ? (new Date() - userData.lastSeen.toDate()) / (1000 * 60)
                         : 999;
@@ -586,16 +586,18 @@
 
                 // Force logout all users except admin
                 const usersSnap = await getDocs(collection(db, "users"));
-                usersSnap.forEach(async (d) => {
+                const batch = [];
+                usersSnap.forEach((d) => {
                     const u = d.data();
                     if (u.role !== 'admin') {
-                        await setDoc(doc(db, "users", d.id), {
+                        batch.push(setDoc(doc(db, "users", d.id), {
                             forceLogout: true,
                             forceLogoutAt: serverTimestamp(),
                             forceLogoutBy: currentUser.uid
-                        }, { merge: true });
+                        }, { merge: true }));
                     }
                 });
+                await Promise.all(batch);
 
                 alert('تم تفعيل وضع الصيانة وإغلاق جميع الجلسات.');
             } catch (e) { alert('خطأ: ' + e.message); }
@@ -610,14 +612,19 @@
                     endedBy: currentUser.uid
                 }, { merge: true });
 
-                // Clear forceLogout flags
+                // Clear forceLogout flags for non-admin users
                 const usersSnap = await getDocs(collection(db, "users"));
-                usersSnap.forEach(async (d) => {
-                    await setDoc(doc(db, "users", d.id), {
-                        forceLogout: false,
-                        isLoggedIn: false
-                    }, { merge: true });
+                const batch = [];
+                usersSnap.forEach((d) => {
+                    const u = d.data();
+                    if (u.role !== 'admin') {
+                        batch.push(setDoc(doc(db, "users", d.id), {
+                            forceLogout: false,
+                            isLoggedIn: false
+                        }, { merge: true }));
+                    }
                 });
+                await Promise.all(batch);
 
                 alert('تم إيقاف وضع الصيانة.');
             } catch (e) { alert('خطأ: ' + e.message); }
@@ -654,9 +661,9 @@
             window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
         };
 
-        // Check forceLogout every 10 seconds
+        // Check forceLogout every 10 seconds (skip for admin)
         setInterval(async () => {
-            if (!currentUser) return;
+            if (!currentUser || userData?.role === 'admin') return;
             try {
                 const ud = await getDoc(doc(db, "users", currentUser.uid));
                 if (ud.exists() && ud.data().forceLogout === true) {
