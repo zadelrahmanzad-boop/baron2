@@ -733,14 +733,17 @@
             const ud = await getDoc(doc(db, "users", user.uid));
             if (ud.exists()) {
                 userData = ud.data();
-                if (userData.role !== 'admin' && userData.isLoggedIn === true) {
-                    const diffMin = userData.lastSeen && userData.lastSeen.toDate ? (new Date() - userData.lastSeen.toDate()) / (1000 * 60) : 999;
-                    if (diffMin <= 10) {
-                        await signOut(auth);
-                        alert('هذا الحساب مسجل دخول على جهاز آخر. يرجى تسجيل الخروج من الجهاز الآخر أولاً.');
-                        window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
-                        return;
-                    }
+                // Check multi-login with session awareness
+                const lastSeen = userData.lastSeen && userData.lastSeen.toDate ? userData.lastSeen.toDate() : null;
+                const diffMin = lastSeen ? (new Date() - lastSeen) / (1000 * 60) : 999;
+                const storedSessionId = localStorage.getItem('baron_session_id');
+                const isSameSession = storedSessionId && storedSessionId === userData.currentSessionId;
+
+                if (userData.role !== 'admin' && userData.isLoggedIn === true && !isSameSession && diffMin <= 2 && userData.forceLogout !== true) {
+                    await signOut(auth);
+                    alert('هذا الحساب مسجل دخول على جهاز آخر. يرجى الانتظار دقيقتين وإعادة المحاولة.');
+                    window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
+                    return;
                 }
                 document.getElementById('uName').textContent = userData.fullName || user.email;
                 document.getElementById('uRole').textContent = roleName(userData.role);
@@ -798,20 +801,32 @@
 
         async function recordLogin(uid) {
             try {
-                await setDoc(doc(db, "users", uid), { isLoggedIn: true, lastSeen: serverTimestamp() }, { merge: true });
+                // Generate unique session ID to detect F5/refresh
+                const sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('baron_session_id', sessionId);
+                currentSessionId = sessionId;
+
+                await setDoc(doc(db, "users", uid), { 
+                    isLoggedIn: true, 
+                    lastSeen: serverTimestamp(),
+                    currentSessionId: sessionId
+                }, { merge: true });
+
                 const logRef = await addDoc(collection(db, "login_log"), {
                     userId: uid, userName: userData?.fullName || currentUser?.email || '',
                     userEmail: currentUser?.email || '', type: 'login', loginAt: serverTimestamp(),
-                    logoutAt: null, sessionDuration: null,
+                    logoutAt: null, sessionDuration: null, sessionId: sessionId,
                     userAgent: navigator.userAgent.substring(0, 100), ip: 'unknown'
                 });
-                currentSessionId = logRef.id;
             } catch (e) { console.error(e); }
         }
 
         async function updateLastSeen() {
             if (!currentUser) return;
-            await setDoc(doc(db, "users", currentUser.uid), { lastSeen: serverTimestamp() }, { merge: true });
+            await setDoc(doc(db, "users", currentUser.uid), { 
+                lastSeen: serverTimestamp(),
+                isLoggedIn: true
+            }, { merge: true });
         }
 
         function roleName(r) { return { admin: 'مدير', manager: 'مشرف', cashier: 'كاشير' }[r] || r; }
@@ -877,11 +892,38 @@
             if (currentSessionId) {
                 try { await setDoc(doc(db, "login_log", currentSessionId), { type: 'logout', logoutAt: serverTimestamp() }, { merge: true }); } catch (e) { console.error(e); }
             }
-            if (currentUser) await setDoc(doc(db, "users", currentUser.uid), { isLoggedIn: false, forceLogout: false }, { merge: true });
+            if (currentUser) await setDoc(doc(db, "users", currentUser.uid), { isLoggedIn: false, forceLogout: false, currentSessionId: null }, { merge: true });
+            localStorage.removeItem('baron_session_id');
             if (maintenanceUnsub) maintenanceUnsub();
             await signOut(auth);
             window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
         };
+
+        // Handle browser close/refresh to logout user immediately
+        window.addEventListener('beforeunload', () => {
+            if (currentUser) {
+                setDoc(doc(db, "users", currentUser.uid), { 
+                    isLoggedIn: false, 
+                    lastSeen: serverTimestamp() 
+                }, { merge: true }).catch(() => {});
+            }
+        });
+
+        window.addEventListener('pagehide', () => {
+            if (currentUser) {
+                setDoc(doc(db, "users", currentUser.uid), { 
+                    isLoggedIn: false 
+                }, { merge: true }).catch(() => {});
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && currentUser) {
+                setDoc(doc(db, "users", currentUser.uid), { 
+                    lastSeen: serverTimestamp() 
+                }, { merge: true }).catch(() => {});
+            }
+        });
 
         // ========== CHANGE PASSWORD ==========
         window.openChangePassModal = () => {
@@ -918,12 +960,24 @@
                 const ud = await getDoc(doc(db, "users", currentUser.uid));
                 if (!ud.exists()) return;
                 const data = ud.data();
+                const storedSessionId = localStorage.getItem('baron_session_id');
+                const isSameSession = storedSessionId && storedSessionId === data.currentSessionId;
 
                 // Check force logout
                 if (data.forceLogout === true) { 
                     alert('تم إغلاق جلستك من قبل الإدارة.'); 
                     await forceLogout(); 
                     return;
+                }
+
+                // Check if another session started (different sessionId and recent lastSeen)
+                if (data.isLoggedIn === true && !isSameSession && data.lastSeen && data.lastSeen.toDate) {
+                    const diffMin = (new Date() - data.lastSeen.toDate()) / (1000 * 60);
+                    if (diffMin <= 2) {
+                        alert('تم فتح حسابك على جهاز آخر. سيتم تسجيل خروجك.');
+                        await forceLogout();
+                        return;
+                    }
                 }
 
                 // Check expiry - log out immediately if expired
@@ -944,7 +998,7 @@
                     return;
                 }
             } catch (e) { console.error('Auth check error:', e); }
-        }, 30000); // Check every 30 seconds
+        }, 20000); // Check every 20 seconds
 
         window.applyMonitorMode = () => {
             // Disable all product cards (visual only, no click)
@@ -984,7 +1038,7 @@
             document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
         };
 
-        window.navTo = (sec) => {
+        window.navTo = async (sec) => {
             // Check permissions for non-admin users
             if (!isAdmin && userData && userData.permissions) {
                 const perms = userData.permissions;
@@ -1006,10 +1060,11 @@
             document.getElementById('view-' + sec).classList.add('active');
             const titles = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين' };
             document.getElementById('pageTitle').textContent = titles[sec];
-            if (sec === 'products') loadProductsTable();
-            if (sec === 'invoices') loadInvoicesTable();
-            if (sec === 'reports') loadReports();
-            if (sec === 'users') { loadUsersTable(); loadLoginLog(); }
+            if (sec === 'pos') await loadPosProducts();
+            if (sec === 'products') await loadProductsTable();
+            if (sec === 'invoices') await loadInvoicesTable();
+            if (sec === 'reports') await loadReports();
+            if (sec === 'users') { await loadUsersTable(); await loadLoginLog(); }
             document.getElementById('statsBar').style.display = sec === 'pos' ? 'grid' : 'none';
         };
 
@@ -1087,7 +1142,8 @@
                         { code: "#1038", name: "بيف تشيز برجر", price: 150, category: "برجر" }
                     ];
                     for (const p of defaults) await addDoc(collection(db, "products"), { ...p, createdAt: serverTimestamp() });
-                    loadPosProducts(); return;
+                    await loadPosProducts();
+                    return;
                 }
                 snap.forEach(d => { const p = d.data(); p.id = d.id; allProducts.push(p); });
                 renderProductsGrid();
@@ -1815,7 +1871,8 @@
             if (currentSessionId) {
                 try { await setDoc(doc(db, "login_log", currentSessionId), { type: 'logout', logoutAt: serverTimestamp() }, { merge: true }); } catch (e) { console.error(e); }
             }
-            if (currentUser) await setDoc(doc(db, "users", currentUser.uid), { isLoggedIn: false, forceLogout: false }, { merge: true });
+            if (currentUser) await setDoc(doc(db, "users", currentUser.uid), { isLoggedIn: false, forceLogout: false, currentSessionId: null }, { merge: true });
+            localStorage.removeItem('baron_session_id');
             if (maintenanceUnsub) maintenanceUnsub();
             await signOut(auth);
             window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
