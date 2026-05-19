@@ -411,11 +411,17 @@
             <div class="section-view active" id="view-pos">
                 <div class="pos-grid">
                     <div>
-                        <div class="cat-tabs" id="catTabs"></div>
-                        <div class="card-head" style="margin-bottom:15px;background:white;border-radius:18px;padding:15px 20px;">
-                            <h3>قائمة المنتجات</h3>
+                        <div class="card-head" style="margin-bottom:15px;background:white;border-radius:18px;padding:15px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+                            <h3 style="margin:0;">قائمة المنتجات</h3>
+                            <div style="flex:1;min-width:200px;position:relative;">
+                                <i class="fas fa-search" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#aaa;"></i>
+                                <input type="text" id="productSearch" placeholder="ابحث عن منتج..." 
+                                    style="width:100%;padding:10px 15px 10px 40px;border:2px solid #e8e8e8;border-radius:12px;font-family:'Cairo',sans-serif;font-size:14px;"
+                                    oninput="filterProducts()" autocomplete="off">
+                            </div>
                             <div class="btns"><button class="btn btn-gry" onclick="loadPosProducts()"><i class="fas fa-sync-alt"></i> تحديث</button></div>
                         </div>
+                        <div class="cat-tabs" id="catTabs"></div>
                         <div class="pos-products" id="posProducts"><div style="grid-column:1/-1;text-align:center;padding:40px;"><div class="spin"></div><p style="color:#aaa;margin-top:15px;">جاري التحميل...</p></div></div>
                     </div>
 
@@ -1141,6 +1147,9 @@
                     return;
                 }
                 snap.forEach(d => { const p = d.data(); p.id = d.id; allProducts.push(p); });
+                currentSearchQuery = '';
+                const searchInput = document.getElementById('productSearch');
+                if (searchInput) searchInput.value = '';
                 renderCategoryTabs();
                 renderProductsGrid();
             } catch (e) {
@@ -1149,12 +1158,27 @@
             }
         }
 
+        let currentSearchQuery = '';
+
         function renderProductsGrid() {
             const box = document.getElementById('posProducts');
             try {
-                const filtered = currentFilter === 'all' ? allProducts : allProducts.filter(p => p.category === currentFilter);
+                let filtered = allProducts;
+                // Category filter
+                if (currentFilter !== 'all') {
+                    filtered = filtered.filter(p => p.category === currentFilter);
+                }
+                // Search filter (instant)
+                if (currentSearchQuery.trim()) {
+                    const q = currentSearchQuery.trim().toLowerCase();
+                    filtered = filtered.filter(p => {
+                        const nameMatch = (p.name || '').toLowerCase().includes(q);
+                        const codeMatch = (p.code || '').toLowerCase().includes(q);
+                        return nameMatch || codeMatch;
+                    });
+                }
                 if (filtered.length === 0) {
-                    box.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#aaa;"><i class="fas fa-box-open" style="font-size:40px;margin-bottom:10px;"></i><p>لا توجد منتجات في هذا التصنيف</p></div>';
+                    box.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#aaa;"><i class="fas fa-box-open" style="font-size:40px;margin-bottom:10px;"></i><p>لا توجد منتجات مطابقة</p></div>';
                     return;
                 }
                 let html = '';
@@ -1176,6 +1200,12 @@
                 box.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#aaa;"><i class="fas fa-exclamation-circle" style="font-size:40px;margin-bottom:10px;"></i><p>خطأ في عرض المنتجات</p></div>';
             }
         }
+
+        window.filterProducts = () => {
+            const input = document.getElementById('productSearch');
+            currentSearchQuery = input ? input.value : '';
+            renderProductsGrid();
+        };
 
         function renderCategoryTabs() {
             const container = document.getElementById('catTabs');
