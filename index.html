@@ -683,6 +683,7 @@
                     <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_users" value="users"><label for="perm_users">المستخدمين</label></div>
                     <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_settings" value="settings"><label for="perm_settings">الإعدادات</label></div>
                     <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_change_password" value="change_password"><label for="perm_change_password">تغيير كلمة السر</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)" style="grid-column:1/-1;background:#fff3cd;border-color:var(--warning);"><input type="checkbox" id="perm_monitor_only" value="monitor_only"><label for="perm_monitor_only"><i class="fas fa-eye" style="color:var(--warning);"></i> متابعة فقط (بدون بيع)</label></div>
                 </div>
             </div>
             <div class="modal-foot"><button class="btn btn-gry" onclick="closeEditUserModal()">إلغاء</button><button class="btn btn-main" onclick="updateUser()">حفظ التعديلات</button></div>
@@ -713,9 +714,10 @@
         let maintenanceUnsub = null;
         let currentFilter = 'all';
         let cartPaymentMethod = 'cash';
+        let isMonitorOnly = false; // true = can view but cannot sell
 
-        const DEFAULT_PERMS = { pos: true, products: true, invoices: true, reports: true, users: false, settings: false, change_password: true };
-        const PERM_LABELS = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين', settings: 'الإعدادات', change_password: 'تغيير كلمة السر' };
+        const DEFAULT_PERMS = { pos: true, products: true, invoices: true, reports: true, users: false, settings: false, change_password: true, monitor_only: false };
+        const PERM_LABELS = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين', settings: 'الإعدادات', change_password: 'تغيير كلمة السر', monitor_only: 'متابعة فقط (بدون بيع)' };
         const CAT_ICONS = {
             'تشكن': { icon: 'fa-drumstick-bite', class: 'cat-chicken' },
             'برجر': { icon: 'fa-hamburger', class: 'cat-burger' },
@@ -763,15 +765,21 @@
                     return;
                 }
                 isAdmin = userData.role === 'admin';
+                const userPerms = userData.permissions || DEFAULT_PERMS;
+                isMonitorOnly = userPerms.monitor_only === true;
+
                 if (isAdmin) {
                     document.getElementById('btnAddUser').style.display = 'inline-flex';
                     document.getElementById('navUsers').classList.add('show');
                     document.getElementById('btnResetInv').style.display = 'inline-flex';
                 }
                 // Show change password button if user has permission
-                const userPerms = userData.permissions || DEFAULT_PERMS;
                 if (userPerms.change_password === true || isAdmin) {
                     document.getElementById('btnChangePass').style.display = 'block';
+                }
+                // Apply monitor-only mode
+                if (isMonitorOnly) {
+                    applyMonitorMode();
                 }
                 await recordLogin(user.uid);
             } else {
@@ -938,6 +946,36 @@
             } catch (e) { console.error('Auth check error:', e); }
         }, 30000); // Check every 30 seconds
 
+        window.applyMonitorMode = () => {
+            // Disable all product cards (visual only, no click)
+            document.querySelectorAll('.product-card').forEach(card => {
+                card.style.opacity = '0.6';
+                card.style.cursor = 'not-allowed';
+                card.onclick = null;
+                card.title = 'وضع المتابعة فقط - لا يمكن البيع';
+            });
+            // Disable checkout button
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            if (checkoutBtn) {
+                checkoutBtn.disabled = true;
+                checkoutBtn.textContent = 'وضع المتابعة فقط';
+                checkoutBtn.style.background = '#888';
+                checkoutBtn.onclick = () => alert('ليس لديك صلاحية البيع - متابعة فقط');
+            }
+            // Show monitor banner
+            const banner = document.createElement('div');
+            banner.id = 'monitorBanner';
+            banner.innerHTML = '<i class="fas fa-eye"></i> وضع المتابعة فقط - يمكنك المشاهدة بدون البيع';
+            banner.style.cssText = 'background:linear-gradient(135deg, var(--warning), #d68910);color:white;padding:10px 20px;border-radius:10px;text-align:center;font-weight:700;font-size:14px;margin-bottom:15px;display:flex;align-items:center;justify-content:center;gap:10px;';
+            const posView = document.getElementById('view-pos');
+            if (posView && !document.getElementById('monitorBanner')) {
+                posView.insertBefore(banner, posView.firstChild);
+            }
+            // Disable cart interactions
+            document.querySelectorAll('.cart-qty button').forEach(btn => btn.disabled = true);
+            document.querySelector('.clear-cart').style.display = 'none';
+        };
+
         window.toggleSidebar = () => {
             const sidebar = document.querySelector('.sidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -950,15 +988,20 @@
             // Check permissions for non-admin users
             if (!isAdmin && userData && userData.permissions) {
                 const perms = userData.permissions;
-                if (sec === 'users' && !perms.users) { alert('ليس لديك صلاحية الوصول'); return; }
-                if (sec === 'products' && !perms.products) { alert('ليس لديك صلاحية الوصول'); return; }
-                if (sec === 'invoices' && !perms.invoices) { alert('ليس لديك صلاحية الوصول'); return; }
-                if (sec === 'reports' && !perms.reports) { alert('ليس لديك صلاحية الوصول'); return; }
+                // Monitor-only users can view everything but cannot sell
+                if (!isMonitorOnly) {
+                    if (sec === 'users' && !perms.users) { alert('ليس لديك صلاحية الوصول'); return; }
+                    if (sec === 'products' && !perms.products) { alert('ليس لديك صلاحية الوصول'); return; }
+                    if (sec === 'invoices' && !perms.invoices) { alert('ليس لديك صلاحية الوصول'); return; }
+                    if (sec === 'reports' && !perms.reports) { alert('ليس لديك صلاحية الوصول'); return; }
+                }
             }
             if (sec === 'users' && !isAdmin) { alert('للمدير فقط'); return; }
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             if (event && event.currentTarget) event.currentTarget.classList.add('active');
             if (window.innerWidth <= 768 && document.querySelector('.sidebar').classList.contains('open')) toggleSidebar();
+            // Apply monitor mode when returning to POS
+            if (sec === 'pos' && isMonitorOnly) setTimeout(applyMonitorMode, 200);
             document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
             document.getElementById('view-' + sec).classList.add('active');
             const titles = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين' };
@@ -1066,6 +1109,8 @@
                 </div>`;
             });
             box.innerHTML = html;
+            // Re-apply monitor mode if active after products reload
+            if (isMonitorOnly) setTimeout(applyMonitorMode, 100);
         }
 
         window.filterByCategory = (cat) => {
@@ -1493,7 +1538,7 @@
             if (role !== 'admin' && (!days || days < 1)) { alert('حدد عدد أيام'); return; }
             try {
                 const cred = await createUserWithEmailAndPassword(auth, email, pass);
-                const perms = role === 'admin' ? { pos: true, products: true, invoices: true, reports: true, users: true, settings: true, change_password: true } : { ...DEFAULT_PERMS };
+                const perms = role === 'admin' ? { pos: true, products: true, invoices: true, reports: true, users: true, settings: true, change_password: true, monitor_only: false } : { ...DEFAULT_PERMS };
                 const udata = { email, fullName: name, role, status: "active", permissions: perms, isLoggedIn: false, createdAt: serverTimestamp(), lastLogin: serverTimestamp(), createdBy: currentUser.uid };
                 if (role !== 'admin') { const exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000); udata.daysActivated = days; udata.expiresAt = exp; }
                 await setDoc(doc(db, "users", cred.user.uid), udata);
