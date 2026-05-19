@@ -196,6 +196,8 @@
             box-sizing: border-box;
             font-size: 10px;
         }
+        .inv-logo { text-align: center; margin: 4px 0; }
+        .inv-logo img { max-width: 70px; height: auto; display: inline-block; }
         .inv-header { text-align: center; margin-bottom: 8px; }
         .inv-header img { max-width: 80px; margin-bottom: 4px; }
         .inv-header .logo-text { font-size: 22px; font-weight: 800; letter-spacing: 2px; }
@@ -933,9 +935,22 @@
             cartPaymentMethod = method;
             document.querySelectorAll('.pay-toggle-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('pay' + method.charAt(0).toUpperCase() + method.slice(1)).classList.add('active');
+            const paidInput = document.getElementById('summaryPaid');
             if (method === 'delivery') {
                 const currentFee = parseFloat(document.getElementById('summaryDeliveryFee').value) || 0;
                 if (currentFee === 0) document.getElementById('summaryDeliveryFee').value = 15;
+            }
+            if (method !== 'cash') {
+                // فيزا أو ديليفري: المدفوع = الإجمالي النهائي تلقائياً
+                const calc = getCartCalculations();
+                paidInput.value = calc.finalTotal;
+                paidInput.readOnly = true;
+                paidInput.style.background = '#f0f0f0';
+            } else {
+                // كاش: المستخدم يدخل المبلغ يدوياً
+                paidInput.readOnly = false;
+                paidInput.style.background = 'white';
+                // paidInput.value = 0;  // نخلي القيمة اللي المستخدم يدخلها
             }
             updateCartSummary();
         };
@@ -980,8 +995,13 @@
 
         window.checkout = async () => {
             if (cart.length === 0) return;
+            // لو فيزا أو ديليفري: المدفوع = الإجمالي تلقائياً
+            if (cartPaymentMethod !== 'cash') {
+                const calcAuto = getCartCalculations();
+                document.getElementById('summaryPaid').value = calcAuto.finalTotal;
+            }
             const calc = getCartCalculations();
-            if (calc.remaining < 0) { alert('المبلغ المدفوع غير كافٍ!'); return; }
+            if (cartPaymentMethod === 'cash' && calc.remaining < 0) { alert('المبلغ المدفوع غير كافٍ!'); return; }
 
             const btn = document.getElementById('checkoutBtn');
             btn.disabled = true;
@@ -1042,12 +1062,11 @@
             const invoiceHTML = `
             <div class="invoice-print-wrap" id="printInvoice">
                 <div class="inv-header">
-                    <img src="${LOGO_URL}" alt="BARON" onerror="this.style.display='none'">
                     <div class="logo-text">BARON</div>
                     <div class="sub-text">DONE WITH LOVE</div>
-                </div>
-                <div class="inv-qr">
-                    <img src="${qrUrl}" alt="QR">
+                    <div class="inv-logo">
+                        <img src="${LOGO_URL}" alt="BARON" onerror="this.style.display='none'" style="width:70px;height:auto;margin:4px auto;display:block;">
+                    </div>
                 </div>
                 <div class="inv-meta">
                     <strong>فاتورة: ${invoiceNumber}</strong><br>
@@ -1079,8 +1098,7 @@
                 <button class="btn btn-gry" onclick="closeInvoiceModal()">إغلاق</button>
             </div>`;
             modal.classList.add('show');
-
-            // طباعة تلقائية نسختين بعد فتح الفاتورة
+            // طباعة تلقائية نسختين
             setTimeout(() => autoPrintDouble(), 400);
         }
 
