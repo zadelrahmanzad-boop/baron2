@@ -374,7 +374,8 @@
                     <div class="r" id="uRole">...</div>
                 </div>
             </div>
-            <button class="logout-btn" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+            <button class="logout-btn" onclick="doLogout()" style="margin-bottom:8px;"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+            <button class="logout-btn" id="btnChangePass" onclick="openChangePassModal()" style="background:rgba(52,152,219,0.2);border-color:rgba(52,152,219,0.3);color:#3498db;display:none;"><i class="fas fa-key"></i> تغيير كلمة السر</button>
         </div>
     </div>
 
@@ -618,6 +619,30 @@
         </div>
     </div>
 
+    <!-- Change Password Modal -->
+    <div class="modal-bg" id="changePassModal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeChangePassModal()">&times;</button>
+            <h2><i class="fas fa-key"></i> تغيير كلمة السر</h2>
+            <div class="form-row">
+                <label>كلمة السر الحالية</label>
+                <input type="password" id="currentPass" placeholder="********">
+            </div>
+            <div class="form-row">
+                <label>كلمة السر الجديدة</label>
+                <input type="password" id="newPass" placeholder="6 أحرف على الأقل">
+            </div>
+            <div class="form-row">
+                <label>تأكيد كلمة السر الجديدة</label>
+                <input type="password" id="confirmPass" placeholder="********">
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-gry" onclick="closeChangePassModal()">إلغاء</button>
+                <button class="btn btn-main" onclick="changePassword()">حفظ</button>
+            </div>
+        </div>
+    </div>
+
     <!-- User Modal -->
     <div class="modal-bg" id="userModal">
         <div class="modal-box">
@@ -657,6 +682,7 @@
                     <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_reports" value="reports"><label for="perm_reports">التقارير</label></div>
                     <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_users" value="users"><label for="perm_users">المستخدمين</label></div>
                     <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_settings" value="settings"><label for="perm_settings">الإعدادات</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_change_password" value="change_password"><label for="perm_change_password">تغيير كلمة السر</label></div>
                 </div>
             </div>
             <div class="modal-foot"><button class="btn btn-gry" onclick="closeEditUserModal()">إلغاء</button><button class="btn btn-main" onclick="updateUser()">حفظ التعديلات</button></div>
@@ -666,7 +692,7 @@
     <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.3/qz-tray.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, deleteDoc, addDoc, setDoc, serverTimestamp, query, orderBy, limit, runTransaction, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const app = initializeApp({
@@ -688,8 +714,8 @@
         let currentFilter = 'all';
         let cartPaymentMethod = 'cash';
 
-        const DEFAULT_PERMS = { pos: true, products: true, invoices: true, reports: true, users: false, settings: false };
-        const PERM_LABELS = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين', settings: 'الإعدادات' };
+        const DEFAULT_PERMS = { pos: true, products: true, invoices: true, reports: true, users: false, settings: false, change_password: true };
+        const PERM_LABELS = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين', settings: 'الإعدادات', change_password: 'تغيير كلمة السر' };
         const CAT_ICONS = {
             'تشكن': { icon: 'fa-drumstick-bite', class: 'cat-chicken' },
             'برجر': { icon: 'fa-hamburger', class: 'cat-burger' },
@@ -741,6 +767,11 @@
                     document.getElementById('btnAddUser').style.display = 'inline-flex';
                     document.getElementById('navUsers').classList.add('show');
                     document.getElementById('btnResetInv').style.display = 'inline-flex';
+                }
+                // Show change password button if user has permission
+                const userPerms = userData.permissions || DEFAULT_PERMS;
+                if (userPerms.change_password === true || isAdmin) {
+                    document.getElementById('btnChangePass').style.display = 'block';
                 }
                 await recordLogin(user.uid);
             } else {
@@ -844,6 +875,35 @@
             window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
         };
 
+        // ========== CHANGE PASSWORD ==========
+        window.openChangePassModal = () => {
+            document.getElementById('changePassModal').classList.add('show');
+        };
+        window.closeChangePassModal = () => {
+            document.getElementById('changePassModal').classList.remove('show');
+            document.getElementById('currentPass').value = '';
+            document.getElementById('newPass').value = '';
+            document.getElementById('confirmPass').value = '';
+        };
+        window.changePassword = async () => {
+            const current = document.getElementById('currentPass').value;
+            const newPass = document.getElementById('newPass').value;
+            const confirm = document.getElementById('confirmPass').value;
+            if (!current || !newPass || !confirm) { alert('املأ جميع الحقول'); return; }
+            if (newPass.length < 6) { alert('كلمة السر الجديدة ضعيفة'); return; }
+            if (newPass !== confirm) { alert('كلمة السر الجديدة غير متطابقة'); return; }
+            try {
+                const cred = EmailAuthProvider.credential(currentUser.email, current);
+                await reauthenticateWithCredential(currentUser, cred);
+                await updatePassword(currentUser, newPass);
+                alert('تم تغيير كلمة السر بنجاح');
+                closeChangePassModal();
+            } catch (e) {
+                if (e.code === 'auth/wrong-password') alert('كلمة السر الحالية غير صحيحة');
+                else alert('خطأ: ' + e.message);
+            }
+        };
+
         setInterval(async () => {
             if (!currentUser || userData?.role === 'admin') return;
             try {
@@ -887,6 +947,14 @@
         };
 
         window.navTo = (sec) => {
+            // Check permissions for non-admin users
+            if (!isAdmin && userData && userData.permissions) {
+                const perms = userData.permissions;
+                if (sec === 'users' && !perms.users) { alert('ليس لديك صلاحية الوصول'); return; }
+                if (sec === 'products' && !perms.products) { alert('ليس لديك صلاحية الوصول'); return; }
+                if (sec === 'invoices' && !perms.invoices) { alert('ليس لديك صلاحية الوصول'); return; }
+                if (sec === 'reports' && !perms.reports) { alert('ليس لديك صلاحية الوصول'); return; }
+            }
             if (sec === 'users' && !isAdmin) { alert('للمدير فقط'); return; }
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             if (event && event.currentTarget) event.currentTarget.classList.add('active');
@@ -1425,7 +1493,7 @@
             if (role !== 'admin' && (!days || days < 1)) { alert('حدد عدد أيام'); return; }
             try {
                 const cred = await createUserWithEmailAndPassword(auth, email, pass);
-                const perms = role === 'admin' ? { pos: true, products: true, invoices: true, reports: true, users: true, settings: true } : { ...DEFAULT_PERMS };
+                const perms = role === 'admin' ? { pos: true, products: true, invoices: true, reports: true, users: true, settings: true, change_password: true } : { ...DEFAULT_PERMS };
                 const udata = { email, fullName: name, role, status: "active", permissions: perms, isLoggedIn: false, createdAt: serverTimestamp(), lastLogin: serverTimestamp(), createdBy: currentUser.uid };
                 if (role !== 'admin') { const exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000); udata.daysActivated = days; udata.expiresAt = exp; }
                 await setDoc(doc(db, "users", cred.user.uid), udata);
@@ -1502,11 +1570,14 @@
             const days = parseInt(document.getElementById('editUserDays').value);
             if (!name) { alert('الاسم مطلوب'); return; }
 
-            // Gather permissions from checkboxes
+            // Gather permissions from checkboxes - ALL checkboxes
             const perms = {};
             document.querySelectorAll('#editUserPerms input[type="checkbox"]').forEach(cb => { 
                 perms[cb.value] = cb.checked; 
             });
+            // Ensure change_password is included
+            const cpCb = document.getElementById('perm_change_password');
+            if (cpCb) perms.change_password = cpCb.checked;
             console.log('Saving permissions:', perms); // Debug
 
             const updates = { 
