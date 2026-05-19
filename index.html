@@ -763,15 +763,17 @@
             const ud = await getDoc(doc(db, "users", user.uid));
             if (ud.exists()) {
                 userData = ud.data();
-                // Check multi-login with session awareness
+                // Multi-login check: rely ONLY on lastSeen + sessionId (NOT isLoggedIn)
                 const lastSeen = userData.lastSeen && userData.lastSeen.toDate ? userData.lastSeen.toDate() : null;
                 const diffMin = lastSeen ? (new Date() - lastSeen) / (1000 * 60) : 999;
                 const storedSessionId = localStorage.getItem('baron_session_id');
                 const isSameSession = storedSessionId && storedSessionId === userData.currentSessionId;
 
-                if (userData.role !== 'admin' && userData.isLoggedIn === true && !isSameSession && diffMin <= 2 && userData.forceLogout !== true) {
+                // Allow if: same session (F5/refresh) OR lastSeen is old (> 3 min, previous session died)
+                // Block if: different session AND lastSeen is recent (< 3 min, someone else is active)
+                if (userData.role !== 'admin' && !isSameSession && diffMin <= 3 && userData.forceLogout !== true) {
                     await signOut(auth);
-                    alert('هذا الحساب مسجل دخول على جهاز آخر. يرجى الانتظار دقيقتين وإعادة المحاولة.');
+                    alert('هذا الحساب مسجل دخول على جهاز آخر. يرجى الانتظار 3 دقائق وإعادة المحاولة.');
                     window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
                     return;
                 }
@@ -831,13 +833,13 @@
 
         async function recordLogin(uid) {
             try {
-                // Generate unique session ID to detect F5/refresh
+                // Generate unique session ID for THIS device/browser
                 const sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 localStorage.setItem('baron_session_id', sessionId);
                 currentSessionId = sessionId;
 
+                // Write sessionId to Firestore so other devices can detect it
                 await setDoc(doc(db, "users", uid), { 
-                    isLoggedIn: true, 
                     lastSeen: serverTimestamp(),
                     currentSessionId: sessionId
                 }, { merge: true });
@@ -855,7 +857,7 @@
             if (!currentUser) return;
             await setDoc(doc(db, "users", currentUser.uid), { 
                 lastSeen: serverTimestamp(),
-                isLoggedIn: true
+                currentSessionId: currentSessionId || localStorage.getItem('baron_session_id')
             }, { merge: true });
         }
 
@@ -886,7 +888,12 @@
                 usersSnap.forEach((d) => {
                     const u = d.data();
                     if (u.role !== 'admin') {
-                        batch.push(setDoc(doc(db, "users", d.id), { forceLogout: true, forceLogoutAt: serverTimestamp(), forceLogoutBy: currentUser.uid }, { merge: true }));
+                        batch.push(setDoc(doc(db, "users", d.id), { 
+                            forceLogout: true, 
+                            forceLogoutAt: serverTimestamp(), 
+                            forceLogoutBy: currentUser.uid,
+                            currentSessionId: null
+                        }, { merge: true }));
                     }
                 });
                 await Promise.all(batch);
@@ -902,7 +909,7 @@
                 const batch = [];
                 usersSnap.forEach((d) => {
                     const u = d.data();
-                    if (u.role !== 'admin') batch.push(setDoc(doc(db, "users", d.id), { forceLogout: false, isLoggedIn: false }, { merge: true }));
+                    if (u.role !== 'admin') batch.push(setDoc(doc(db, "users", d.id), { forceLogout: false }, { merge: true }));
                 });
                 await Promise.all(batch);
                 alert('تم إيقاف وضع الصيانة.');
@@ -913,7 +920,12 @@
             if (!isAdmin) { alert('للمدير فقط'); return; }
             if (!confirm('هل أنت متأكد من إغلاق جلسة هذا المستخدم؟')) return;
             try {
-                await setDoc(doc(db, "users", uid), { forceLogout: true, forceLogoutAt: serverTimestamp(), forceLogoutBy: currentUser.uid }, { merge: true });
+                await setDoc(doc(db, "users", uid), { 
+                    forceLogout: true, 
+                    forceLogoutAt: serverTimestamp(), 
+                    forceLogoutBy: currentUser.uid,
+                    currentSessionId: null
+                }, { merge: true });
                 alert('تم إرسال أمر إغلاق الجلسة.'); loadUsersTable();
             } catch (e) { alert('خطأ: ' + e.message); }
         };
@@ -991,7 +1003,8 @@
                 if (!ud.exists()) return;
                 const data = ud.data();
                 const storedSessionId = localStorage.getItem('baron_session_id');
-                const isSameSession = storedSessionId && storedSessionId === data.currentSessionId;
+                const firestoreSessionId = data.currentSessionId || null;
+                const isSameSession = storedSessionId && storedSessionId === firestoreSessionId;
 
                 // Check force logout
                 if (data.forceLogout === true) { 
@@ -1000,14 +1013,11 @@
                     return;
                 }
 
-                // Check if another session started (different sessionId and recent lastSeen)
-                if (data.isLoggedIn === true && !isSameSession && data.lastSeen && data.lastSeen.toDate) {
-                    const diffMin = (new Date() - data.lastSeen.toDate()) / (1000 * 60);
-                    if (diffMin <= 2) {
-                        alert('تم فتح حسابك على جهاز آخر. سيتم تسجيل خروجك.');
-                        await forceLogout();
-                        return;
-                    }
+                // PERFECT: If currentSessionId in Firestore changed → another device logged in
+                if (!isSameSession && firestoreSessionId !== null) {
+                    alert('تم فتح حسابك على جهاز آخر. سيتم تسجيل خروجك.');
+                    await forceLogout();
+                    return;
                 }
 
                 // Check expiry - log out immediately if expired
@@ -1028,7 +1038,7 @@
                     return;
                 }
             } catch (e) { console.error('Auth check error:', e); }
-        }, 20000); // Check every 20 seconds
+        }, 15000); // Check every 15 seconds (faster detection)
 
         window.applyMonitorMode = () => {
             // Disable all product cards (visual only, no click)
@@ -1940,7 +1950,7 @@
                     let onlineStatus = '<span class="offline-dot"></span>غير متصل';
                     if (u.lastSeen && u.lastSeen.toDate) {
                         const diffMin = (now - u.lastSeen.toDate()) / (1000 * 60);
-                        if (diffMin <= 5) onlineStatus = '<span class="online-dot"></span>متصل';
+                        if (diffMin <= 3) onlineStatus = '<span class="online-dot"></span>متصل';
                     }
 
                     const isActive = (u.status === 'active' && !isExpired) || isAdminUser;
@@ -2049,7 +2059,12 @@
             if (currentSessionId) {
                 try { await setDoc(doc(db, "login_log", currentSessionId), { type: 'logout', logoutAt: serverTimestamp() }, { merge: true }); } catch (e) { console.error(e); }
             }
-            if (currentUser) await setDoc(doc(db, "users", currentUser.uid), { isLoggedIn: false, forceLogout: false, currentSessionId: null }, { merge: true });
+            // CRITICAL: Clear currentSessionId from Firestore so other devices can login
+            if (currentUser) await setDoc(doc(db, "users", currentUser.uid), { 
+                forceLogout: false, 
+                currentSessionId: null,
+                lastSeen: serverTimestamp()
+            }, { merge: true });
             localStorage.removeItem('baron_session_id');
             if (maintenanceUnsub) maintenanceUnsub();
             await signOut(auth);
