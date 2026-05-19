@@ -610,6 +610,37 @@
         </div>
     </div>
 
+    <!-- Edit Product Modal -->
+    <div class="modal-bg" id="editProductModal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeEditProductModal()">&times;</button>
+            <h2 id="editProdModalTitle">تعديل المنتج</h2>
+            <input type="hidden" id="editProdId">
+            <div class="form-row">
+                <label>كود المنتج</label>
+                <input type="text" id="editProdCode" placeholder="#1001" readonly style="background:#f5f5f5;">
+            </div>
+            <div class="form-row"><label>اسم المنتج</label><input type="text" id="editProdName" placeholder="تشكن بروست"></div>
+            <div class="form-row"><label>السعر (ج.م)</label><input type="number" id="editProdPrice" placeholder="165"></div>
+            <div class="form-row">
+                <label>الفئة</label>
+                <select id="editProdCat" onchange="onEditProdCatChange()">
+                    <option value="تشكن">تشكن</option>
+                    <option value="برجر">برجر</option>
+                    <option value="سايدز">سايدز</option>
+                    <option value="مشروبات">مشروبات</option>
+                    <option value="أخرى">أخرى</option>
+                    <option value="__new__">+ فئة جديدة</option>
+                </select>
+                <div id="editNewCatRow" class="cat-input-row hidden" style="margin-top:8px;">
+                    <input type="text" id="editNewCatInput" placeholder="اسم الفئة الجديدة">
+                    <button onclick="addNewEditCategory()">إضافة</button>
+                </div>
+            </div>
+            <div class="modal-foot"><button class="btn btn-gry" onclick="closeEditProductModal()">إلغاء</button><button class="btn btn-main" onclick="saveProductEdit()">حفظ التعديلات</button></div>
+        </div>
+    </div>
+
     <!-- Invoice Modal -->
     <div class="modal-bg" id="invoiceModal">
         <div class="modal-box invoice-modal-box">
@@ -1082,6 +1113,7 @@
                 snap.forEach(d => { const c = d.data().category; if (c) cats.add(c); });
                 productCategories = Array.from(cats);
                 updateProdCatSelect();
+                updateEditProdCatSelect();
                 renderCategoryTabs();
             } catch (e) { console.error('loadCategories error:', e); }
         }
@@ -1509,7 +1541,99 @@
             await deleteDoc(doc(db, "products", id));
             loadProductsTable(); loadPosProducts(); loadStats();
         };
-        window.editProduct = (id) => alert('تعديل المنتج: ' + id);
+        let editingProductId = null;
+
+        window.editProduct = async (id) => {
+            editingProductId = id;
+            try {
+                const d = await getDoc(doc(db, "products", id));
+                if (!d.exists()) { alert('المنتج غير موجود'); return; }
+                const p = d.data();
+                document.getElementById('editProdId').value = id;
+                document.getElementById('editProdCode').value = p.code || '';
+                document.getElementById('editProdName').value = p.name || '';
+                document.getElementById('editProdPrice').value = p.price || '';
+
+                // Ensure category exists in select
+                const catSelect = document.getElementById('editProdCat');
+                updateEditProdCatSelect();
+                if (productCategories.includes(p.category)) {
+                    catSelect.value = p.category;
+                } else if (p.category) {
+                    // Add to categories if missing
+                    productCategories.push(p.category);
+                    updateEditProdCatSelect();
+                    catSelect.value = p.category;
+                } else {
+                    catSelect.value = 'أخرى';
+                }
+                document.getElementById('editNewCatRow').classList.add('hidden');
+                document.getElementById('editNewCatInput').value = '';
+
+                document.getElementById('editProductModal').classList.add('show');
+            } catch (e) {
+                alert('خطأ في تحميل بيانات المنتج: ' + e.message);
+            }
+        };
+
+        window.closeEditProductModal = () => {
+            document.getElementById('editProductModal').classList.remove('show');
+            editingProductId = null;
+            document.getElementById('editProdId').value = '';
+            document.getElementById('editProdCode').value = '';
+            document.getElementById('editProdName').value = '';
+            document.getElementById('editProdPrice').value = '';
+            document.getElementById('editNewCatInput').value = '';
+            document.getElementById('editNewCatRow').classList.add('hidden');
+        };
+
+        window.onEditProdCatChange = () => {
+            document.getElementById('editNewCatRow').classList.toggle('hidden', document.getElementById('editProdCat').value !== '__new__');
+        };
+
+        function updateEditProdCatSelect() {
+            const sel = document.getElementById('editProdCat');
+            const current = sel.value;
+            sel.innerHTML = '';
+            productCategories.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; sel.appendChild(opt); });
+            const newOpt = document.createElement('option'); newOpt.value = '__new__'; newOpt.textContent = '+ فئة جديدة'; sel.appendChild(newOpt);
+            if (productCategories.includes(current)) sel.value = current;
+        }
+
+        window.addNewEditCategory = () => {
+            const val = document.getElementById('editNewCatInput').value.trim();
+            if (!val) return;
+            if (!productCategories.includes(val)) productCategories.push(val);
+            updateEditProdCatSelect();
+            document.getElementById('editProdCat').value = val;
+            document.getElementById('editNewCatRow').classList.add('hidden');
+            document.getElementById('editNewCatInput').value = '';
+        };
+
+        window.saveProductEdit = async () => {
+            if (!editingProductId) return;
+            const name = document.getElementById('editProdName').value.trim();
+            const price = parseFloat(document.getElementById('editProdPrice').value);
+            let cat = document.getElementById('editProdCat').value;
+            if (cat === '__new__') cat = document.getElementById('editNewCatInput').value.trim() || 'أخرى';
+            if (!name || !price) { alert('املأ البيانات'); return; }
+            try {
+                await setDoc(doc(db, "products", editingProductId), {
+                    name,
+                    price,
+                    category: cat,
+                    updatedAt: serverTimestamp(),
+                    updatedBy: currentUser.uid
+                }, { merge: true });
+                alert('تم تعديل المنتج بنجاح');
+                closeEditProductModal();
+                await loadProductsTable();
+                await loadPosProducts();
+                await loadCategories();
+            } catch (e) {
+                alert('خطأ في الحفظ: ' + e.message);
+            }
+        };
 
         async function loadInvoicesTable() {
             const tbody = document.getElementById('invoicesBody');
