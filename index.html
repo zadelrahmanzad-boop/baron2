@@ -1458,7 +1458,7 @@
             btn.disabled = true;
             btn.textContent = 'جاري الحفظ...';
 
-            const items = cart.map(i => ({ name: i.name, price: i.price, qty: i.qty, total: i.price * i.qty }));
+            const items = cart.map(i => ({ name: i.name, price: i.price, qty: i.qty, total: i.price * i.qty, note: (i.note || '').toString() }));
             try {
                 const invoiceNumber = await getNextInvoiceNumber();
                 const invRef = await addDoc(collection(db, "invoices"), {
