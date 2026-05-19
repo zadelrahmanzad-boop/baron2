@@ -718,16 +718,23 @@
                 document.getElementById('uRole').textContent = roleName(userData.role);
                 document.getElementById('uAvatar').textContent = (userData.fullName || user.email).charAt(0).toUpperCase();
                 document.getElementById('currentUserName').textContent = userData.fullName || user.email;
+                // Check expiry on login
                 if (userData.expiresAt && userData.expiresAt.toDate) {
-                    const now = new Date(); const ex = userData.expiresAt.toDate();
+                    const now = new Date(); 
+                    const ex = userData.expiresAt.toDate();
                     if (now > ex && userData.role !== 'admin') {
-                        await signOut(auth); alert('انتهت صلاحية حسابك');
-                        window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/"; return;
+                        await signOut(auth); 
+                        alert('انتهت صلاحية حسابك');
+                        window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/"; 
+                        return;
                     }
                 }
+                // Check if disabled on login
                 if (userData.status === 'disabled') {
-                    await signOut(auth); alert('حسابك معطل');
-                    window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/"; return;
+                    await signOut(auth); 
+                    alert('حسابك معطل');
+                    window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/"; 
+                    return;
                 }
                 isAdmin = userData.role === 'admin';
                 if (isAdmin) {
@@ -841,9 +848,35 @@
             if (!currentUser || userData?.role === 'admin') return;
             try {
                 const ud = await getDoc(doc(db, "users", currentUser.uid));
-                if (ud.exists() && ud.data().forceLogout === true) { alert('تم إغلاق جلستك من قبل الإدارة.'); await forceLogout(); }
-            } catch (e) {}
-        }, 10000);
+                if (!ud.exists()) return;
+                const data = ud.data();
+
+                // Check force logout
+                if (data.forceLogout === true) { 
+                    alert('تم إغلاق جلستك من قبل الإدارة.'); 
+                    await forceLogout(); 
+                    return;
+                }
+
+                // Check expiry - log out immediately if expired
+                if (data.expiresAt && data.expiresAt.toDate) {
+                    const now = new Date();
+                    const expiry = data.expiresAt.toDate();
+                    if (now > expiry) {
+                        alert('انتهت صلاحية حسابك. يرجى التواصل مع الإدارة لتجديد الاشتراك.');
+                        await forceLogout();
+                        return;
+                    }
+                }
+
+                // Check if account disabled
+                if (data.status === 'disabled') {
+                    alert('حسابك معطل من قبل الإدارة.');
+                    await forceLogout();
+                    return;
+                }
+            } catch (e) { console.error('Auth check error:', e); }
+        }, 30000); // Check every 30 seconds
 
         window.toggleSidebar = () => {
             const sidebar = document.querySelector('.sidebar');
@@ -1456,6 +1489,7 @@
             const cb = el.querySelector('input[type="checkbox"]');
             cb.checked = !cb.checked;
             el.classList.toggle('active', cb.checked);
+            console.log('Permission toggled:', cb.value, cb.checked); // Debug
         };
 
         window.updateUser = async () => {
@@ -1468,21 +1502,41 @@
             const days = parseInt(document.getElementById('editUserDays').value);
             if (!name) { alert('الاسم مطلوب'); return; }
 
+            // Gather permissions from checkboxes
             const perms = {};
-            document.querySelectorAll('#editUserPerms input[type="checkbox"]').forEach(cb => { perms[cb.value] = cb.checked; });
+            document.querySelectorAll('#editUserPerms input[type="checkbox"]').forEach(cb => { 
+                perms[cb.value] = cb.checked; 
+            });
+            console.log('Saving permissions:', perms); // Debug
 
-            const updates = { fullName: name, role, status, permissions: perms, updatedAt: serverTimestamp(), updatedBy: currentUser.uid };
+            const updates = { 
+                fullName: name, 
+                role: role, 
+                status: status, 
+                permissions: perms, 
+                updatedAt: serverTimestamp(), 
+                updatedBy: currentUser.uid 
+            };
+
             if (role !== 'admin') {
                 if (!days || days < 1) { alert('حدد عدد أيام'); return; }
                 const newExp = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-                updates.expiresAt = newExp; updates.daysActivated = days;
-            } else { updates.expiresAt = null; updates.daysActivated = null; }
+                updates.expiresAt = newExp; 
+                updates.daysActivated = days;
+            } else { 
+                updates.expiresAt = null; 
+                updates.daysActivated = null; 
+            }
 
             try {
                 await setDoc(doc(db, "users", uid), updates, { merge: true });
-                alert('تم تحديث المستخدم');
-                closeEditUserModal(); loadUsersTable();
-            } catch (e) { alert('خطأ: ' + e.message); }
+                alert('تم تحديث المستخدم بنجاح');
+                closeEditUserModal(); 
+                loadUsersTable();
+            } catch (e) { 
+                alert('خطأ: ' + e.message); 
+                console.error(e);
+            }
         };
 
         window.toggleUserStatus = async (uid, currentStatus) => {
