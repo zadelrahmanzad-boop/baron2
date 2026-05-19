@@ -2,16 +2,15 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BARON POS - نظام الكاشير</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --primary: #e94560; --primary-dark: #c73e54; --secondary: #0f3460; --dark: #1a1a2e; --light: #f8f9fa; --success: #27ae60; --warning: #f39c12; --danger: #e74c3c; --info: #3498db; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: #f0f2f5; color: #333; overflow-x: hidden; -webkit-text-size-adjust: 100%; }
-        .sidebar { position: fixed; right: 0; top: 0; width: 270px; height: 100vh; background: linear-gradient(180deg, var(--dark) 0%, var(--secondary) 100%); color: white; padding: 0; z-index: 1000; transition: transform 0.3s ease; box-shadow: -5px 0 30px rgba(0,0,0,0.2); transform: translateX(0); }
-        .sidebar.hidden-mobile { transform: translateX(100%); }
+        body { font-family: 'Cairo', sans-serif; background: #f0f2f5; color: #333; overflow-x: hidden; }
+        .sidebar { position: fixed; right: 0; top: 0; width: 270px; height: 100vh; background: linear-gradient(180deg, var(--dark) 0%, var(--secondary) 100%); color: white; padding: 0; z-index: 1000; transition: all 0.3s; box-shadow: -5px 0 30px rgba(0,0,0,0.2); }
         .sidebar-brand { padding: 25px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.15); }
         .sidebar-brand h2 { font-size: 26px; font-weight: 800; background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .sidebar-brand p { font-size: 12px; opacity: 0.7; margin-top: 4px; }
@@ -28,14 +27,13 @@
         .user-mini-info .r { font-size: 11px; opacity: 0.7; }
         .logout-btn { width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 10px; cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 600; transition: all 0.3s; }
         .logout-btn:hover { background: rgba(233,69,96,0.3); border-color: var(--primary); }
-        .main { margin-right: 270px; min-height: 100vh; transition: margin-right 0.3s ease; }
-        .main.full-width { margin-right: 0; }
+        .main { margin-right: 270px; min-height: 100vh; }
         .topbar { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 15px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
         .topbar h1 { font-size: 22px; color: var(--dark); font-weight: 800; }
         .topbar .date { background: var(--light); padding: 8px 18px; border-radius: 10px; font-size: 13px; color: #666; font-weight: 600; }
         .current-user-badge { display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; }
         .current-user-badge i { font-size: 16px; }
-        .content { padding: 25px 30px; max-width: 100%; box-sizing: border-box; }
+        .content { padding: 25px 30px; }
         .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
         .stat-box { background: white; padding: 22px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: all 0.3s; position: relative; overflow: hidden; }
         .stat-box:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
@@ -177,30 +175,11 @@
             @page { size: 58mm auto; margin: 0; }
             body * { visibility: hidden; }
             .invoice-print-wrap, .invoice-print-wrap * { visibility: visible; }
-            .invoice-print-wrap { 
-                position: static; 
-                width: 58mm; 
-                margin: 0 auto;
-                padding: 2mm;
-                box-sizing: border-box;
-                max-width: none;
-            }
+            .invoice-print-wrap { position: static; width: 58mm; margin: 0 auto; padding: 2mm; box-sizing: border-box; max-width: none; }
             .no-print { display: none !important; }
             .page-break { page-break-after: always; }
         }
-
-        .invoice-print-wrap { 
-            background: white; 
-            font-family: 'Cairo', sans-serif; 
-            width: 58mm; 
-            margin: 0 auto; 
-            padding: 2mm; 
-            box-sizing: border-box;
-            font-size: 10px;
-            direction: rtl;
-            overflow-wrap: break-word;
-            word-wrap: break-word;
-        }
+        .invoice-print-wrap { background: white; font-family: 'Cairo', sans-serif; width: 58mm; margin: 0 auto; padding: 2mm; box-sizing: border-box; font-size: 10px; direction: rtl; overflow-wrap: break-word; word-wrap: break-word; }
         .inv-logo { text-align: center; margin: 6px 0; }
         .inv-logo img { max-width: 140px; height: auto; display: inline-block; }
         .inv-header { text-align: center; margin-bottom: 8px; }
@@ -266,10 +245,24 @@
         .maintenance-overlay h2 { font-size: 28px; margin-bottom: 10px; }
         .maintenance-overlay p { font-size: 16px; opacity: 0.8; margin-bottom: 30px; }
         .maintenance-overlay button { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 16px; cursor: pointer; }
-        /* ====== MOBILE RESPONSIVE ====== */
-        .mobile-menu-btn { display: none; position: fixed; top: 15px; right: 15px; z-index: 1100; width: 45px; height: 45px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(233,69,96,0.3); }
+        /* ====== FLUID RESPONSIVE ====== */
+        html, body { width: 100%; height: 100%; margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
+        .mobile-menu-btn { display: none; position: fixed; top: 15px; right: 15px; z-index: 1100; width: clamp(40px, 12vw, 50px); height: clamp(40px, 12vw, 50px); background: var(--primary); color: white; border: none; border-radius: 12px; font-size: clamp(16px, 5vw, 22px); cursor: pointer; box-shadow: 0 4px 15px rgba(233,69,96,0.3); align-items: center; justify-content: center; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; backdrop-filter: blur(2px); }
         .sidebar-overlay.show { display: block; }
+        .main { width: calc(100% - 270px); box-sizing: border-box; }
+        .content { width: 100%; box-sizing: border-box; }
+        .stats-row { width: 100%; }
+        .pos-grid { width: 100%; grid-template-columns: 1fr minmax(300px, 420px); }
+        .pos-products { width: 100%; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+        .product-card { width: 100%; box-sizing: border-box; }
+        .product-card .cat-img { width: 100%; height: auto; min-height: 80px; padding: 15px 0; font-size: clamp(28px, 5vw, 40px); }
+        .product-card .name { font-size: clamp(12px, 3vw, 14px); }
+        .product-card .price { font-size: clamp(14px, 4vw, 18px); }
+        .card { width: 100%; box-sizing: border-box; }
+        .cart-panel { width: 100%; box-sizing: border-box; }
+        table { display: block; overflow-x: auto; white-space: nowrap; }
+        @media (min-width: 769px) { table { display: table; white-space: normal; } }
 
         @media (max-width: 1100px) {
             .pos-grid { grid-template-columns: 1fr; }
@@ -277,62 +270,68 @@
         }
 
         @media (max-width: 768px) {
-            .mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
-            .sidebar { transform: translateX(100%); width: 280px; }
+            .mobile-menu-btn { display: flex; }
+            .sidebar { transform: translateX(100%); width: min(280px, 80vw); overflow-y: auto; overflow-x: hidden; }
             .sidebar.open { transform: translateX(0); }
-            .main { margin-right: 0; width: 100%; }
+            .main { margin-right: 0; width: 100%; min-width: 0; }
             body { overflow-x: hidden; }
-            .topbar { padding: 15px 20px; flex-wrap: wrap; gap: 10px; }
-            .topbar h1 { font-size: 18px; }
-            .content { padding: 15px; }
+            .content { padding: 15px; width: 100%; min-width: 0; }
             .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .stat-box { padding: 15px; }
-            .stat-num { font-size: 22px; }
-            .pos-products { grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: none; }
-            .product-card .cat-img { height: 80px; }
-            .product-card .cat-img i { font-size: 32px; }
-            .product-card .name { font-size: 12px; min-height: 30px; }
-            .product-card .price { font-size: 16px; }
-            .cat-tabs { gap: 6px; }
-            .cat-tab { padding: 6px 10px; font-size: 11px; }
-            .cart-panel { padding: 15px; margin-top: 15px; }
+            .stat-box { padding: 15px; min-width: 0; }
+            .stat-icon { width: clamp(32px, 10vw, 48px); height: clamp(32px, 10vw, 48px); font-size: clamp(16px, 5vw, 22px); }
+            .stat-num { font-size: clamp(18px, 5vw, 28px); }
+            .stat-label { font-size: clamp(10px, 3vw, 13px); }
+            .pos-grid { grid-template-columns: 1fr; gap: 15px; }
+            .pos-products { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; max-height: none; }
+            .product-card .cat-img { min-height: 70px; padding: 10px 0; }
+            .cat-tabs { gap: 6px; flex-wrap: wrap; }
+            .cat-tab { padding: 6px 10px; font-size: clamp(10px, 2.5vw, 13px); flex: 1 1 auto; justify-content: center; }
+            .cart-panel { padding: 15px; margin-top: 10px; position: static; }
             .cart-item { flex-wrap: wrap; gap: 8px; }
-            .cart-item-info { min-width: 120px; }
-            .cart-summary-row { font-size: 12px; }
-            .cart-summary-row.total { font-size: 16px; }
-            .checkout-btn { padding: 12px; font-size: 15px; }
-            .payment-toggle { flex-wrap: wrap; }
-            .pay-toggle-btn { padding: 6px; font-size: 11px; }
-            table { font-size: 12px; }
-            th, td { padding: 10px 8px; }
-            .card-head { padding: 15px; flex-wrap: wrap; gap: 10px; }
-            .card-head h3 { font-size: 15px; }
-            .btn { padding: 6px 12px; font-size: 12px; }
-            .modal-box { padding: 20px; margin: 10px; }
-            .modal-box.wide { max-width: 95vw; }
-            .perm-grid { grid-template-columns: 1fr; }
-            .user-actions { justify-content: flex-start; }
-            .tabs { flex-wrap: wrap; }
-            .tab-btn { padding: 6px 14px; font-size: 13px; }
+            .cart-summary-row { font-size: clamp(11px, 3vw, 13px); }
+            .cart-summary-row input { width: clamp(50px, 15vw, 80px); }
+            .checkout-btn { padding: 12px; font-size: clamp(14px, 4vw, 16px); }
+            .payment-toggle { flex-wrap: wrap; gap: 5px; }
+            .pay-toggle-btn { padding: 6px; font-size: clamp(10px, 2.5vw, 12px); flex: 1 1 auto; }
+            .topbar { padding: 12px 15px; flex-wrap: wrap; gap: 8px; }
+            .topbar h1 { font-size: clamp(16px, 5vw, 22px); }
             .topbar .date { display: none; }
-            .current-user-badge { padding: 6px 12px; font-size: 12px; }
+            .card-head { padding: 15px; flex-wrap: wrap; gap: 8px; }
+            .card-head h3 { font-size: clamp(14px, 4vw, 17px); }
+            .btn { padding: 6px 12px; font-size: clamp(11px, 3vw, 13px); }
+            .modal-box { padding: 20px; margin: 10px; width: calc(100% - 20px); max-width: none; }
+            .modal-box.wide { max-width: none; }
+            .perm-grid { grid-template-columns: 1fr; }
+            .tabs { flex-wrap: wrap; gap: 5px; }
+            .tab-btn { padding: 6px 14px; font-size: clamp(12px, 3vw, 14px); flex: 1 1 auto; }
+            .current-user-badge { padding: 6px 10px; font-size: clamp(11px, 3vw, 14px); }
+            table { font-size: clamp(10px, 2.5vw, 12px); }
+            th, td { padding: 8px 6px; }
+            .user-actions { gap: 4px; }
+            .user-actions .btn { padding: 4px 8px; font-size: 10px; }
+            .tag { font-size: clamp(9px, 2.5vw, 12px); padding: 2px 8px; }
+            .hours-badge, .days-left, .login-badge { font-size: clamp(9px, 2.5vw, 12px); }
+            .form-row input, .form-row select { padding: 10px 12px; font-size: clamp(13px, 3.5vw, 15px); }
+            .input-group { flex-wrap: wrap; }
+            .input-group button { padding: 8px 12px; }
         }
 
         @media (max-width: 480px) {
-            .stats-row { grid-template-columns: 1fr 1fr; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
             .pos-products { grid-template-columns: repeat(2, 1fr); }
-            .product-card .cat-img { height: 70px; }
-            .product-card .cat-img i { font-size: 28px; }
-            .stat-icon { width: 40px; height: 40px; font-size: 18px; }
-            .stat-num { font-size: 20px; }
+            .product-card .cat-img { min-height: 60px; padding: 8px 0; }
+            .product-card .cat-img i { font-size: clamp(24px, 6vw, 32px); }
+            .stat-icon { width: clamp(32px, 10vw, 40px); height: clamp(32px, 10vw, 40px); font-size: clamp(16px, 5vw, 22px); }
+            .stat-num { font-size: clamp(18px, 5vw, 22px); }
             .cart-panel { padding: 12px; }
-            .cart-summary-row input { width: 60px; }
-            .form-row input, .form-row select { padding: 10px 12px; font-size: 14px; }
+            .cart-summary-row input { width: clamp(45px, 12vw, 60px); }
+            .form-row input, .form-row select { padding: 8px 10px; font-size: clamp(12px, 3.5vw, 14px); }
             .modal-foot { flex-direction: column; }
             .modal-foot button { width: 100%; justify-content: center; }
-            th { font-size: 10px; padding: 8px 4px; }
-            td { font-size: 11px; padding: 8px 4px; }
-            .tag { font-size: 10px; padding: 2px 8px; }
+            th { font-size: clamp(9px, 2.5vw, 11px); padding: 6px 4px; }
+            td { font-size: clamp(10px, 2.5vw, 12px); padding: 6px 4px; }
+            .tag { font-size: clamp(9px, 2.5vw, 11px); padding: 2px 6px; }
+            .invoice-print-wrap { width: 100%; padding: 3mm; }
         }
         .section-view { display: none; }
         .section-view.active { display: block; }
@@ -1651,50 +1650,7 @@
             await signOut(auth);
             window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
         };
-    </script>
-
-    <!-- Printer Settings Modal -->
-    <div class="modal-bg" id="printerModal">
-        <div class="modal-box">
-            <button class="modal-close" onclick="closePrinterModal()">&times;</button>
-            <h2><i class="fas fa-print"></i> إعدادات الطابعة</h2>
-            <div class="form-row">
-                <div style="background:#e8f4fd; padding:12px 15px; border-radius:10px; color:#0c5460; font-size:13px; margin-bottom:15px;">
-                    <i class="fas fa-info-circle"></i> لازم يكون برنامج <strong>QZ Tray</strong> شغال على الجهاز. لو مش مثبّته، <a href="https://qz.io" target="_blank" style="color:var(--primary);">حمله من هنا</a>.
-                </div>
-            </div>
-            <div class="form-row">
-                <label>حالة الاتصال</label>
-                <div id="qzStatus" style="font-weight:700; color:#888;">غير متصل</div>
-            </div>
-            <div class="form-row">
-                <button class="btn btn-main" onclick="connectQZ()" id="btnConnectQZ"><i class="fas fa-plug"></i> توصيل QZ Tray</button>
-            </div>
-            <div class="form-row">
-                <label>اختر الطابعة</label>
-                <select id="printerSelect" disabled>
-                    <option value="">-- اضغط "توصيل" الأول --</option>
-                </select>
-            </div>
-            <div class="form-row">
-                <label>عدد النسخ الافتراضي</label>
-                <input type="number" id="printerCopies" value="2" min="1" max="5" style="width:80px;">
-            </div>
-            <div class="form-row">
-                <label>عرض الورق (مم)</label>
-                <select id="paperWidth">
-                    <option value="58">58 مم (حرارية صغيرة)</option>
-                    <option value="80">80 مم (حرارية كبيرة)</option>
-                    <option value="A4">A4 (عادية)</option>
-                </select>
-            </div>
-            <div class="modal-foot">
-                <button class="btn btn-gry" onclick="closePrinterModal()">إلغاء</button>
-                <button class="btn btn-main" onclick="savePrinterSettings()">حفظ الإعدادات</button>
-            </div>
-        </div>
-    </div>
-
+    
 
         // ========== QZ TRAY PRINTER INTEGRATION ==========
         let qzPrinter = localStorage.getItem('qzPrinter') || null;
@@ -1790,6 +1746,50 @@
             doc.close();
             setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => iframe.remove(), 3000); }, 600);
         };
+
+</script>
+
+    <!-- Printer Settings Modal -->
+    <div class="modal-bg" id="printerModal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closePrinterModal()">&times;</button>
+            <h2><i class="fas fa-print"></i> إعدادات الطابعة</h2>
+            <div class="form-row">
+                <div style="background:#e8f4fd; padding:12px 15px; border-radius:10px; color:#0c5460; font-size:13px; margin-bottom:15px;">
+                    <i class="fas fa-info-circle"></i> لازم يكون برنامج <strong>QZ Tray</strong> شغال على الجهاز. لو مش مثبّته، <a href="https://qz.io" target="_blank" style="color:var(--primary);">حمله من هنا</a>.
+                </div>
+            </div>
+            <div class="form-row">
+                <label>حالة الاتصال</label>
+                <div id="qzStatus" style="font-weight:700; color:#888;">غير متصل</div>
+            </div>
+            <div class="form-row">
+                <button class="btn btn-main" onclick="connectQZ()" id="btnConnectQZ"><i class="fas fa-plug"></i> توصيل QZ Tray</button>
+            </div>
+            <div class="form-row">
+                <label>اختر الطابعة</label>
+                <select id="printerSelect" disabled>
+                    <option value="">-- اضغط "توصيل" الأول --</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>عدد النسخ الافتراضي</label>
+                <input type="number" id="printerCopies" value="2" min="1" max="5" style="width:80px;">
+            </div>
+            <div class="form-row">
+                <label>عرض الورق (مم)</label>
+                <select id="paperWidth">
+                    <option value="58">58 مم (حرارية صغيرة)</option>
+                    <option value="80">80 مم (حرارية كبيرة)</option>
+                    <option value="A4">A4 (عادية)</option>
+                </select>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-gry" onclick="closePrinterModal()">إلغاء</button>
+                <button class="btn btn-main" onclick="savePrinterSettings()">حفظ الإعدادات</button>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>
