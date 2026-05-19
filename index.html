@@ -1370,7 +1370,20 @@
             let html = '';
             cart.forEach(item => {
                 const itemTotal = item.price * item.qty;
-                html += `<div class="cart-item"><div class="cart-item-info"><div class="cart-item-name">${item.name}</div><div class="cart-item-price">${item.price} ج.م × ${item.qty}</div></div><div class="cart-qty"><button onclick="changeQty('${item.id}', -1)">−</button><span>${item.qty}</span><button onclick="changeQty('${item.id}', 1)">+</button></div><div style="font-weight:800;min-width:60px;text-align:left;">${itemTotal} ج.م</div><button class="btn btn-red" style="padding:4px 8px;margin-right:8px;" onclick="removeFromCart('${item.id}')"><i class="fas fa-times"></i></button></div>`;
+                const noteDisplay = item.note ? `<div style="font-size:11px;color:var(--warning);margin-top:2px;font-weight:700;"><i class="fas fa-sticky-note"></i> ${item.note}</div>` : '';
+                html += `<div class="cart-item" style="align-items:flex-start;">
+                    <div class="cart-item-info" style="flex:1;">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-price">${item.price} ج.م × ${item.qty}</div>
+                        ${noteDisplay}
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin:0 8px;">
+                        <div class="cart-qty"><button onclick="changeQty('${item.id}', -1)">−</button><span>${item.qty}</span><button onclick="changeQty('${item.id}', 1)">+</button></div>
+                        <button class="btn btn-warn" style="padding:3px 8px;font-size:11px;" onclick="addNoteToCartItem('${item.id}')" title="إضافة ملاحظة"><i class="fas fa-sticky-note"></i></button>
+                    </div>
+                    <div style="font-weight:800;min-width:60px;text-align:left;margin-top:4px;">${itemTotal} ج.م</div>
+                    <button class="btn btn-red" style="padding:4px 8px;margin-right:6px;margin-top:4px;" onclick="removeFromCart('${item.id}')"><i class="fas fa-times"></i></button>
+                </div>`;
             });
             box.innerHTML = html;
             document.getElementById('cartCount').textContent = '(' + cart.reduce((s, i) => s + i.qty, 0) + ')';
