@@ -195,9 +195,12 @@
             padding: 2mm; 
             box-sizing: border-box;
             font-size: 10px;
+            direction: rtl;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
         }
         .inv-logo { text-align: center; margin: 4px 0; }
-        .inv-logo img { max-width: 70px; height: auto; display: inline-block; }
+        .inv-logo img { max-width: 140px; height: auto; display: inline-block; }
         .inv-header { text-align: center; margin-bottom: 8px; }
         .inv-header img { max-width: 80px; margin-bottom: 4px; }
         .inv-header .logo-text { font-size: 22px; font-weight: 800; letter-spacing: 2px; }
@@ -292,6 +295,7 @@
             <li class="nav-item" onclick="navTo('invoices')"><i class="fas fa-file-invoice-dollar"></i><span>الفواتير</span></li>
             <li class="nav-item" onclick="navTo('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></li>
             <li class="nav-item admin-only-nav" id="navUsers" onclick="navTo('users')"><i class="fas fa-users-cog"></i><span>المستخدمين</span></li>
+            <li class="nav-item" onclick="openPrinterModal()"><i class="fas fa-print"></i><span>إعدادات الطابعة</span><span id="printerStatusDot" style="width:8px;height:8px;border-radius:50%;background:#bbb;margin-right:auto;"></span></li>
         </ul>
         <div class="sidebar-footer">
             <div class="user-mini">
@@ -590,6 +594,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.3/qz-tray.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -1053,7 +1058,7 @@
 
             let rows = '';
             items.forEach(i => {
-                rows += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price}</td><td>${i.total.toLocaleString('ar-EG')}</td></tr>`;
+                rows += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price}</td><td>${i.total.toLocaleString('en-US')}</td></tr>`;
             });
 
             const qrData = `BARON|INV#${invoiceNumber}|${calc.finalTotal}|${dateStr}`;
@@ -1065,7 +1070,7 @@
                     <div class="logo-text">BARON</div>
                     <div class="sub-text">DONE WITH LOVE</div>
                     <div class="inv-logo">
-                        <img src="${LOGO_URL}" alt="BARON" onerror="this.style.display='none'" style="width:70px;height:auto;margin:4px auto;display:block;">
+                        <img src="${LOGO_URL}" alt="BARON" onerror="this.style.display='none'" style="width:140px;height:auto;margin:6px auto;display:block;">
                     </div>
                 </div>
                 <div class="inv-meta">
@@ -1082,12 +1087,12 @@
                 </table>
                 <div class="inv-footer-box">
                     <div class="f-row"><span class="lbl">حساب الدفع عن طريق: ${payMethodLabel}</span><span class="val"></span></div>
-                    <div class="f-row"><span class="lbl">المدفوع:</span><span class="val">${calc.paidAmount.toLocaleString('ar-EG')}</span></div>
+                    <div class="f-row"><span class="lbl">المدفوع:</span><span class="val">${calc.paidAmount.toLocaleString('en-US')}</span></div>
                     <div class="f-row"><span class="lbl">خصم %:</span><span class="val">${calc.discountPercent}%</span></div>
-                    <div class="f-row"><span class="lbl">الخصم:</span><span class="val">${calc.discountAmount.toLocaleString('ar-EG')}</span></div>
-                    <div class="f-row"><span class="lbl">المتبقي:</span><span class="val">${calc.remaining.toLocaleString('ar-EG')}</span></div>
-                    <div class="f-row"><span class="lbl">ديليفري:</span><span class="val">${calc.deliveryFee.toLocaleString('ar-EG')}</span></div>
-                    <div class="f-row total-row"><span class="lbl">المجموع:</span><span class="val">${calc.finalTotal.toLocaleString('ar-EG')}</span></div>
+                    <div class="f-row"><span class="lbl">الخصم:</span><span class="val">${calc.discountAmount.toLocaleString('en-US')}</span></div>
+                    <div class="f-row"><span class="lbl">المتبقي:</span><span class="val">${calc.remaining.toLocaleString('en-US')}</span></div>
+                    <div class="f-row"><span class="lbl">ديليفري:</span><span class="val">${calc.deliveryFee.toLocaleString('en-US')}</span></div>
+                    <div class="f-row total-row"><span class="lbl">المجموع:</span><span class="val">${calc.finalTotal.toLocaleString('en-US')}</span></div>
                 </div>
                 <div class="inv-phone">خدمه التوصيل : 01070004717</div>
                 <div class="inv-thanks">شكراً لزيارتكم - BARON</div>
@@ -1143,7 +1148,7 @@
                         ${cssText}
                     </style>
                 </head>
-                <body>
+                <body style="margin:0;padding:0;direction:rtl;width:58mm;">
                     ${original.outerHTML}
                     <div class="page-break"></div>
                     ${original.outerHTML}
@@ -1599,6 +1604,217 @@
             await signOut(auth);
             window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
         };
-    </script>
+
+    <!-- Printer Settings Modal -->
+    <div class="modal-bg" id="printerModal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closePrinterModal()">&times;</button>
+            <h2><i class="fas fa-print"></i> إعدادات الطابعة</h2>
+            <div class="form-row">
+                <div style="background:#e8f4fd; padding:12px 15px; border-radius:10px; color:#0c5460; font-size:13px; margin-bottom:15px;">
+                    <i class="fas fa-info-circle"></i> لازم يكون برنامج <strong>QZ Tray</strong> شغال على الجهاز. لو مش مثبّته، <a href="https://qz.io" target="_blank" style="color:var(--primary);">حمله من هنا</a>.
+                </div>
+            </div>
+            <div class="form-row">
+                <label>حالة الاتصال</label>
+                <div id="qzStatus" style="font-weight:700; color:#888;">غير متصل</div>
+            </div>
+            <div class="form-row">
+                <button class="btn btn-main" onclick="connectQZ()" id="btnConnectQZ"><i class="fas fa-plug"></i> توصيل QZ Tray</button>
+            </div>
+            <div class="form-row">
+                <label>اختر الطابعة</label>
+                <select id="printerSelect" disabled>
+                    <option value="">-- اضغط "توصيل" الأول --</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>عدد النسخ الافتراضي</label>
+                <input type="number" id="printerCopies" value="2" min="1" max="5" style="width:80px;">
+            </div>
+            <div class="form-row">
+                <label>عرض الورق (مم)</label>
+                <select id="paperWidth">
+                    <option value="58">58 مم (حرارية صغيرة)</option>
+                    <option value="80">80 مم (حرارية كبيرة)</option>
+                    <option value="A4">A4 (عادية)</option>
+                </select>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-gry" onclick="closePrinterModal()">إلغاء</button>
+                <button class="btn btn-main" onclick="savePrinterSettings()">حفظ الإعدادات</button>
+            </div>
+        </div>
+    </div>
+    
+        // ========== QZ TRAY PRINTER INTEGRATION ==========
+        let qzPrinter = localStorage.getItem('qzPrinter') || null;
+        let qzConnected = false;
+        let qzPrinterCopies = parseInt(localStorage.getItem('qzPrinterCopies') || '2');
+        let qzPaperWidth = localStorage.getItem('qzPaperWidth') || '58';
+
+        // Load saved settings on startup
+        if (qzPrinter) { document.getElementById('printerStatusDot').style.background = '#27ae60'; }
+
+        window.openPrinterModal = () => {
+            document.getElementById('printerModal').classList.add('show');
+            document.getElementById('printerSelect').value = qzPrinter || '';
+            document.getElementById('printerCopies').value = qzPrinterCopies;
+            document.getElementById('paperWidth').value = qzPaperWidth;
+            if (qzConnected) updateQZStatus('متصل', 'var(--success)');
+        };
+        window.closePrinterModal = () => { document.getElementById('printerModal').classList.remove('show'); };
+
+        window.connectQZ = async () => {
+            const btn = document.getElementById('btnConnectQZ');
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التوصيل...';
+            try {
+                if (typeof qz === 'undefined') { throw new Error('مكتبة QZ Tray غير محملة'); }
+                if (!qz.websocket.isActive()) { await qz.websocket.connect(); }
+                qzConnected = true;
+                updateQZStatus('متصل', 'var(--success)');
+
+                const printers = await qz.printers.find();
+                const sel = document.getElementById('printerSelect');
+                sel.innerHTML = '<option value="">-- اختر طابعة --</option>';
+                printers.forEach(p => {
+                    const opt = document.createElement('option'); opt.value = p; opt.textContent = p;
+                    if (p === qzPrinter) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+                sel.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> متصل';
+                btn.style.background = 'var(--success)';
+                document.getElementById('printerStatusDot').style.background = '#27ae60';
+            } catch (e) {
+                updateQZStatus('فشل: ' + e.message, 'var(--danger)');
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-plug"></i> إعادة توصيل';
+                alert('مش قادر أتواصل مع QZ Tray.
+
+1. تأكد إن البرنامج شغال على الجهاز
+2. جرّب تفتحه كـ Administrator
+3. لو مش مثبّت: https://qz.io');
+            }
+        };
+
+        function updateQZStatus(text, color) {
+            const el = document.getElementById('qzStatus');
+            el.textContent = text; el.style.color = color || '#888';
+        }
+
+        window.savePrinterSettings = () => {
+            const sel = document.getElementById('printerSelect');
+            const copies = document.getElementById('printerCopies').value;
+            const width = document.getElementById('paperWidth').value;
+            if (sel.value) {
+                qzPrinter = sel.value;
+                localStorage.setItem('qzPrinter', qzPrinter);
+                localStorage.setItem('qzPrinterCopies', copies);
+                localStorage.setItem('qzPaperWidth', width);
+                qzPrinterCopies = parseInt(copies);
+                qzPaperWidth = width;
+                document.getElementById('printerStatusDot').style.background = '#27ae60';
+                alert('تم حفظ إعدادات الطابعة: ' + qzPrinter);
+                closePrinterModal();
+            } else {
+                alert('اختر طابعة الأول');
+            }
+        };
+
+        // Try auto-connect on load if printer was saved
+        if (qzPrinter) {
+            setTimeout(() => {
+                connectQZ().catch(() => {});
+            }, 2000);
+        }
+
+        // Override autoPrintDouble to use QZ if available
+        window.autoPrintDouble = async () => {
+            if (qzConnected && qzPrinter) {
+                try {
+                    const original = document.getElementById('printInvoice');
+                    if (!original) return;
+
+                    // Build full HTML for printing
+                    const styleTag = document.querySelector('style');
+                    const cssText = styleTag ? styleTag.innerText : '';
+                    const paperW = qzPaperWidth === 'A4' ? '210mm' : qzPaperWidth + 'mm';
+
+                    const htmlContent = `
+                        <!DOCTYPE html>
+                        <html lang="ar" dir="rtl">
+                        <head>
+                            <meta charset="UTF-8">
+                            <style>
+                                @page { size: ${paperW} auto; margin: 0; }
+                                body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: ${paperW}; direction: rtl; }
+                                .page-break { page-break-after: always; height: 0; display: block; }
+                                ${cssText}
+                            </style>
+                        </head>
+                        <body style="margin:0;padding:0;direction:rtl;width:${paperW};">
+                            ${original.outerHTML}
+                            <div class="page-break"></div>
+                            ${original.outerHTML}
+                        </body>
+                        </html>
+                    `;
+
+                    const config = qz.configs.create(qzPrinter, { copies: qzPrinterCopies });
+                    await qz.print(config, [{ type: 'html', format: 'plain', data: htmlContent }]);
+
+                    // Mark as printed in DB
+                    const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
+                    allInvs.forEach(d => {
+                        setDoc(doc(db, "invoices", d.id), { printed: true, printedAt: serverTimestamp(), copies: qzPrinterCopies, printer: qzPrinter }, { merge: true });
+                    });
+                    return;
+                } catch (e) {
+                    console.error('QZ Print failed, falling back to iframe:', e);
+                }
+            }
+
+            // Fallback to iframe printing
+            const original = document.getElementById('printInvoice');
+            if (!original) return;
+
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentWindow.document;
+            const styleTag = document.querySelector('style');
+            const cssText = styleTag ? styleTag.innerText : '';
+
+            doc.open();
+            doc.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        @page { size: 58mm auto; margin: 0; }
+                        body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; }
+                        .page-break { page-break-after: always; height: 0; display: block; }
+                        ${cssText}
+                    </style>
+                </head>
+                <body style="margin:0;padding:0;direction:rtl;width:58mm;">
+                    ${original.outerHTML}
+                    <div class="page-break"></div>
+                    ${original.outerHTML}
+                </body>
+                </html>
+            `);
+            doc.close();
+
+            setTimeout(() => {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                setTimeout(() => iframe.remove(), 3000);
+            }, 600);
+        };
+
+</script>
 </body>
 </html>
