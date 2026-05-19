@@ -170,15 +170,32 @@
         .modal-foot button { padding: 10px 24px; border-radius: 10px; border: none; cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 700; }
         .hidden { display: none !important; }
 
-        /* ====== INVOICE PRINT - MATCHING IMAGE 2 ====== */
+        /* ====== INVOICE PRINT - THERMAL 58mm ====== */
         @media print {
+            @page { size: 58mm auto; margin: 0; }
             body * { visibility: hidden; }
             .invoice-print-wrap, .invoice-print-wrap * { visibility: visible; }
-            .invoice-print-wrap { position: absolute; left: 0; top: 0; width: 100%; }
+            .invoice-print-wrap { 
+                position: static; 
+                width: 58mm; 
+                margin: 0 auto;
+                padding: 2mm;
+                box-sizing: border-box;
+                max-width: none;
+            }
             .no-print { display: none !important; }
+            .page-break { page-break-after: always; }
         }
 
-        .invoice-print-wrap { background: white; font-family: 'Cairo', sans-serif; max-width: 320px; margin: 0 auto; padding: 10px; }
+        .invoice-print-wrap { 
+            background: white; 
+            font-family: 'Cairo', sans-serif; 
+            width: 58mm; 
+            margin: 0 auto; 
+            padding: 2mm; 
+            box-sizing: border-box;
+            font-size: 10px;
+        }
         .inv-header { text-align: center; margin-bottom: 8px; }
         .inv-header img { max-width: 80px; margin-bottom: 4px; }
         .inv-header .logo-text { font-size: 22px; font-weight: 800; letter-spacing: 2px; }
@@ -1059,11 +1076,12 @@
 
             box.innerHTML = invoiceHTML + `
             <div class="no-print" style="text-align:center;margin-top:15px;display:flex;gap:8px;justify-content:center;">
-                <button class="btn btn-main" onclick="printInvoiceSingle()"><i class="fas fa-print"></i> طباعة نسخة</button>
-                <button class="btn btn-grn" onclick="printInvoiceDouble()"><i class="fas fa-copy"></i> طباعة نسختين</button>
                 <button class="btn btn-gry" onclick="closeInvoiceModal()">إغلاق</button>
             </div>`;
             modal.classList.add('show');
+
+            // طباعة تلقائية نسختين بعد فتح الفاتورة
+            setTimeout(() => autoPrintDouble(), 400);
         }
 
         window.printInvoiceSingle = async () => {
@@ -1079,24 +1097,48 @@
         };
 
         window.printInvoiceDouble = async () => {
-            const wrap = document.getElementById('printInvoice');
-            if (!wrap) return;
-            const clone = wrap.cloneNode(true);
-            const separator = document.createElement('div');
-            separator.innerHTML = '<div style="border-top:2px dashed #333;margin:15px 0;text-align:center;font-size:10px;color:#888;padding:5px;">--- نسخة ثانية ---</div>';
-            wrap.parentNode.insertBefore(separator, wrap.nextSibling);
-            wrap.parentNode.insertBefore(clone, separator.nextSibling);
+            autoPrintDouble();
+        };
 
-            const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
-            allInvs.forEach(d => {
-                setDoc(doc(db, "invoices", d.id), { printed: true, printedAt: serverTimestamp(), copies: 2 }, { merge: true });
-            });
+        window.autoPrintDouble = () => {
+            const original = document.getElementById('printInvoice');
+            if (!original) return;
+
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentWindow.document;
+            const styleTag = document.querySelector('style');
+            const cssText = styleTag ? styleTag.innerText : '';
+
+            doc.open();
+            doc.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        @page { size: 58mm auto; margin: 0; }
+                        body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; }
+                        .page-break { page-break-after: always; height: 0; display: block; }
+                        ${cssText}
+                    </style>
+                </head>
+                <body>
+                    ${original.outerHTML}
+                    <div class="page-break"></div>
+                    ${original.outerHTML}
+                </body>
+                </html>
+            `);
+            doc.close();
 
             setTimeout(() => {
-                window.print();
-                // Remove clone after print dialog
-                setTimeout(() => { separator.remove(); clone.remove(); }, 1000);
-            }, 300);
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                setTimeout(() => iframe.remove(), 3000);
+            }, 600);
         };
 
         window.closeInvoiceModal = () => { document.getElementById('invoiceModal').classList.remove('show'); };
@@ -1158,7 +1200,7 @@
                     const date = inv.createdAt ? new Date(inv.createdAt.toDate()).toLocaleString('ar-EG') : '-';
                     const payLabels = { cash: 'كاش', visa: 'فيزا', delivery: 'ديليفري' };
                     const payTag = inv.paymentMethod === 'cash' ? 'tag-grn' : inv.paymentMethod === 'visa' ? 'tag-blu' : 'tag-ylw';
-                    html += `<tr><td><strong>#${invNum}</strong></td><td>${date}</td><td>${inv.itemCount || 0} عنصر</td><td style="color:var(--primary);font-weight:800;">${inv.subTotal || inv.total || 0} ج.م</td><td>${inv.deliveryFee || 0} ج.م</td><td style="color:var(--success);">${inv.discountAmount || 0} ج.م</td><td style="font-weight:800;">${inv.total || 0} ج.م</td><td><span class="tag ${payTag}">${payLabels[inv.paymentMethod] || inv.paymentMethod}</span></td><td>${inv.cashierName || '-'}</td><td><button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-eye"></i></button><button class="btn btn-red" onclick="deleteInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-trash"></i></button></td></tr>`;
+                    html += `<tr><td><strong>#${invNum}</strong></td><td>${date}</td><td>${inv.itemCount || 0} عنصر</td><td style="color:var(--primary);font-weight:800;">${inv.subTotal || inv.total || 0} ج.م</td><td>${inv.deliveryFee || 0} ج.م</td><td style="color:var(--success);">${inv.discountAmount || 0} ج.م</td><td style="font-weight:800;">${inv.total || 0} ج.م</td><td><span class="tag ${payTag}">${payLabels[inv.paymentMethod] || inv.paymentMethod}</span></td><td>${inv.cashierName || '-'}</td><td><button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-eye"></i></button>${isAdmin ? `<button class="btn btn-red" onclick="deleteInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-trash"></i></button>` : ''}</td></tr>`;
                 });
                 tbody.innerHTML = html;
             } catch (e) { tbody.innerHTML = '<tr><td colspan="10" class="empty">خطأ</td></tr>'; }
@@ -1181,6 +1223,7 @@
             showInvoice(d.id, inv.invoiceNumber || d.id.slice(-6), inv.items || [], calc);
         };
         window.deleteInvoice = async (id) => {
+            if (!isAdmin) { alert('للمدير فقط'); return; }
             if (!confirm('هل أنت متأكد من حذف الفاتورة؟')) return;
             await deleteDoc(doc(db, "invoices", id));
             loadInvoicesTable(); loadStats();
