@@ -175,37 +175,48 @@
             @page { size: 58mm auto; margin: 0; }
             body * { visibility: hidden; }
             .invoice-print-wrap, .invoice-print-wrap * { visibility: visible; }
-            .invoice-print-wrap { position: static; width: 58mm; margin: 0 auto; padding: 2mm; box-sizing: border-box; max-width: none; }
+            .invoice-print-wrap { position: static; width: 58mm; margin: 0 auto; padding: 0; box-sizing: border-box; max-width: none; }
             .no-print { display: none !important; }
             .page-break { page-break-after: always; }
         }
-        .invoice-print-wrap { background: white; font-family: 'Cairo', sans-serif; width: 58mm; margin: 0 auto; padding: 2mm; box-sizing: border-box; font-size: 10px; direction: rtl; overflow-wrap: break-word; word-wrap: break-word; }
-        .inv-logo { text-align: center; margin: 6px 0; }
-        .inv-logo img { max-width: 140px; height: auto; display: inline-block; }
-        .inv-header { text-align: center; margin-bottom: 8px; }
-        .inv-header img { max-width: 80px; margin-bottom: 4px; }
-        .inv-header .logo-text { font-size: 22px; font-weight: 800; letter-spacing: 2px; }
-        .inv-header .sub-text { font-size: 10px; color: #666; }
-        .inv-qr { text-align: center; margin: 8px 0; }
-        .inv-qr img { width: 80px; height: 80px; }
-        .inv-meta { text-align: center; font-size: 12px; margin-bottom: 10px; line-height: 1.8; }
-        .inv-meta strong { font-weight: 800; }
+        .invoice-print-wrap { 
+            background: white; 
+            font-family: 'Cairo', sans-serif; 
+            width: 58mm; 
+            margin: 0 auto; 
+            padding: 1mm 0; 
+            box-sizing: border-box; 
+            font-size: 14px; 
+            direction: rtl; 
+            overflow-wrap: break-word; 
+            word-wrap: break-word; 
+            text-align: center;
+        }
+        .inv-logo { text-align: center; margin: 2px 0 4px; width: 100%; }
+        .inv-logo img { width: 100%; max-width: 58mm; height: auto; display: block; margin: 0 auto; }
+        .inv-header { text-align: center; margin-bottom: 6px; width: 100%; }
+        .inv-header .logo-text { font-size: 28px; font-weight: 900; letter-spacing: 3px; display: block; }
+        .inv-header .sub-text { font-size: 13px; color: #333; font-weight: 700; }
+        .inv-qr { text-align: center; margin: 4px 0; }
+        .inv-qr img { width: 70px; height: 70px; }
+        .inv-meta { text-align: center; font-size: 14px; margin-bottom: 8px; line-height: 1.6; font-weight: 700; }
+        .inv-meta strong { font-weight: 900; }
 
-        .inv-table { width: 100%; font-size: 12px; border-collapse: collapse; }
-        .inv-table th { text-align: center; padding: 4px 2px; border-bottom: 1px dashed #333; font-size: 11px; font-weight: 800; background: none; }
-        .inv-table td { padding: 3px 2px; border-bottom: 1px dashed #ccc; text-align: center; font-size: 11px; }
-        .inv-table td:first-child { text-align: right; }
+        .inv-table { width: 100%; font-size: 13px; border-collapse: collapse; margin: 4px 0; }
+        .inv-table th { text-align: center; padding: 5px 1px; border-bottom: 2px dashed #333; font-size: 12px; font-weight: 900; background: none; }
+        .inv-table td { padding: 4px 1px; border-bottom: 1px dashed #999; text-align: center; font-size: 13px; font-weight: 700; }
+        .inv-table td:first-child { text-align: right; padding-right: 2px; }
         .inv-table td:nth-child(2) { text-align: center; }
         .inv-table td:nth-child(3) { text-align: center; }
-        .inv-table td:last-child { text-align: center; }
+        .inv-table td:last-child { text-align: center; padding-left: 2px; }
 
-        .inv-footer-box { border: 2px solid #333; padding: 8px; margin-top: 10px; font-size: 11px; }
-        .inv-footer-box .f-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
-        .inv-footer-box .f-row .lbl { font-weight: 700; }
-        .inv-footer-box .f-row .val { font-weight: 800; }
-        .inv-footer-box .f-row.total-row { border-top: 1px solid #333; padding-top: 4px; margin-top: 4px; font-size: 13px; }
-        .inv-phone { text-align: center; font-size: 12px; font-weight: 800; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #333; }
-        .inv-thanks { text-align: center; font-size: 10px; color: #888; margin-top: 6px; }
+        .inv-footer-box { border: 2px solid #000; padding: 6px 4px; margin-top: 8px; font-size: 13px; width: 100%; box-sizing: border-box; }
+        .inv-footer-box .f-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .inv-footer-box .f-row .lbl { font-weight: 800; }
+        .inv-footer-box .f-row .val { font-weight: 900; }
+        .inv-footer-box .f-row.total-row { border-top: 2px solid #000; padding-top: 5px; margin-top: 5px; font-size: 16px; font-weight: 900; }
+        .inv-phone { text-align: center; font-size: 14px; font-weight: 900; margin-top: 8px; padding-top: 6px; border-top: 2px dashed #333; }
+        .inv-thanks { text-align: center; font-size: 12px; color: #555; margin-top: 4px; font-weight: 700; }
 
         /* Invoice Modal */
         .invoice-modal-box { max-width: 360px !important; padding: 15px !important; }
@@ -1272,7 +1283,11 @@
             const p = allProducts.find(x => x.id === pid);
             if (!p) return;
             const existing = cart.find(x => x.id === pid);
-            if (existing) existing.qty++; else cart.push({ id: pid, name: p.name, price: p.price, qty: 1 });
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ id: pid, name: p.name, price: p.price, qty: 1, note: '' });
+            }
             renderCart();
         };
 
@@ -1285,6 +1300,16 @@
         };
 
         window.removeFromCart = (pid) => { cart = cart.filter(x => x.id !== pid); renderCart(); };
+
+        window.addNoteToCartItem = (pid) => {
+            const item = cart.find(x => x.id === pid);
+            if (!item) return;
+            const note = prompt('أضف ملاحظة للمنتج:', item.note || '');
+            if (note !== null) {
+                item.note = note.trim();
+                renderCart();
+            }
+        };
         window.clearCart = () => { cart = []; renderCart(); };
 
         // ========== CART SUMMARY CALCULATIONS ==========
@@ -1426,7 +1451,8 @@
 
             let rows = '';
             items.forEach(i => {
-                rows += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price}</td><td>${i.total.toLocaleString('en-US')}</td></tr>`;
+                const noteRow = i.note ? `<tr><td colspan="4" style="text-align:right;font-size:11px;color:#555;font-weight:700;padding-top:0;padding-bottom:4px;border-bottom:1px dashed #999;"><i class="fas fa-sticky-note" style="color:var(--warning);margin-left:4px;"></i> ${i.note}</td></tr>` : '';
+                rows += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price}</td><td>${i.total.toLocaleString('en-US')}</td></tr>${noteRow}`;
             });
 
             const invoiceHTML = `
@@ -1435,7 +1461,7 @@
                     <div class="logo-text">BARON</div>
                     <div class="sub-text">DONE WITH LOVE</div>
                     <div class="inv-logo">
-                        <img src="${LOGO_URL}" alt="BARON" onerror="this.style.display='none'" style="width:140px;height:auto;margin:6px auto;display:block;">
+                        <img src="${LOGO_URL}" alt="BARON" onerror="this.style.display='none'" style="width:100%;max-width:58mm;height:auto;margin:2px auto;display:block;">
                     </div>
                 </div>
                 <div class="inv-meta">
@@ -2145,7 +2171,7 @@
                     const styleTag = document.querySelector('style');
                     const cssText = styleTag ? styleTag.innerText : '';
                     const paperW = qzPaperWidth === 'A4' ? '210mm' : qzPaperWidth + 'mm';
-                    const htmlContent = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: ${paperW} auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: ${paperW}; direction: rtl; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:${paperW};">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}</body></html>`;
+                    const htmlContent = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: ${paperW} auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: ${paperW}; direction: rtl; font-weight: 700; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:${paperW};font-weight:700;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}</body></html>`;
                     const config = qz.configs.create(qzPrinter, { copies: qzPrinterCopies });
                     await qz.print(config, [{ type: 'html', format: 'plain', data: htmlContent }]);
                     const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
@@ -2162,7 +2188,7 @@
             const styleTag = document.querySelector('style');
             const cssText = styleTag ? styleTag.innerText : '';
             doc.open();
-            doc.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: 58mm auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:58mm;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}</body></html>`);
+            doc.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: 58mm auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; font-weight: 700; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:58mm;font-weight:700;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}</body></html>`);
             doc.close();
             setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => iframe.remove(), 3000); }, 600);
         };
