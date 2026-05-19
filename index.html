@@ -269,7 +269,8 @@
         .pos-grid { width: 100%; grid-template-columns: 1fr minmax(300px, 420px); }
         .pos-products { width: 100%; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
         .product-card { width: 100%; box-sizing: border-box; }
-        .product-card .cat-img { width: 100%; height: auto; min-height: 80px; padding: 15px 0; font-size: clamp(28px, 5vw, 40px); }
+        .product-card .cat-img { width: 100%; height: 100px; min-height: 100px; padding: 0; font-size: clamp(28px, 5vw, 40px); overflow: hidden; position: relative; }
+        .product-card .cat-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .product-card .name { font-size: clamp(12px, 3vw, 14px); }
         .product-card .price { font-size: clamp(14px, 4vw, 18px); }
         .card { width: 100%; box-sizing: border-box; }
@@ -332,7 +333,7 @@
         @media (max-width: 480px) {
             .stats-row { grid-template-columns: repeat(2, 1fr); }
             .pos-products { grid-template-columns: repeat(2, 1fr); }
-            .product-card .cat-img { min-height: 60px; padding: 8px 0; }
+            .product-card .cat-img { min-height: 80px; height: 80px; padding: 0; }
             .product-card .cat-img i { font-size: clamp(24px, 6vw, 32px); }
             .stat-icon { width: clamp(32px, 10vw, 40px); height: clamp(32px, 10vw, 40px); font-size: clamp(16px, 5vw, 22px); }
             .stat-num { font-size: clamp(18px, 5vw, 22px); }
@@ -619,6 +620,26 @@
                     <button onclick="addNewCategory()">إضافة</button>
                 </div>
             </div>
+            <div class="form-row">
+                <label>رابط صورة المنتج <span style="font-size:11px;color:#888;">(اختياري)</span></label>
+                <div class="input-group">
+                    <input type="url" id="prodImage" placeholder="https://example.com/burger.jpg">
+                    <button onclick="previewProdImage()"><i class="fas fa-eye"></i></button>
+                </div>
+                <div id="prodImagePreview" style="margin-top:8px;display:none;">
+                    <img id="prodPreviewImg" src="" style="width:80px;height:80px;object-fit:cover;border-radius:12px;border:2px solid #eee;">
+                </div>
+            </div>
+            <div class="form-row">
+                <label>رابط صورة الفئة <span style="font-size:11px;color:#888;">(اختياري - تظهر لكل منتجات الفئة)</span></label>
+                <div class="input-group">
+                    <input type="url" id="catImage" placeholder="https://example.com/chicken-cat.jpg">
+                    <button onclick="previewCatImage()"><i class="fas fa-eye"></i></button>
+                </div>
+                <div id="catImagePreview" style="margin-top:8px;display:none;">
+                    <img id="catPreviewImg" src="" style="width:80px;height:80px;object-fit:cover;border-radius:12px;border:2px solid #eee;">
+                </div>
+            </div>
             <div class="modal-foot"><button class="btn btn-gry" onclick="closeProductModal()">إلغاء</button><button class="btn btn-main" onclick="saveProduct()">حفظ</button></div>
         </div>
     </div>
@@ -762,11 +783,11 @@
         const DEFAULT_PERMS = { pos: true, products: true, invoices: true, reports: true, users: false, settings: false, change_password: true, monitor_only: false };
         const PERM_LABELS = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين', settings: 'الإعدادات', change_password: 'تغيير كلمة السر', monitor_only: 'متابعة فقط (بدون بيع)' };
         const CAT_ICONS = {
-            'تشكن': { icon: 'fa-drumstick-bite', class: 'cat-chicken' },
-            'برجر': { icon: 'fa-hamburger', class: 'cat-burger' },
-            'سايدز': { icon: 'fa-cookie-bite', class: 'cat-sides' },
-            'مشروبات': { icon: 'fa-glass-whiskey', class: 'cat-drinks' },
-            'أخرى': { icon: 'fa-ellipsis-h', class: 'cat-other' }
+            'تشكن': { icon: 'fa-drumstick-bite', class: 'cat-chicken', emoji: '🍗', catImg: '' },
+            'برجر': { icon: 'fa-burger', class: 'cat-burger', emoji: '🍔', catImg: '' },
+            'سايدز': { icon: 'fa-cookie-bite', class: 'cat-sides', emoji: '🍟', catImg: '' },
+            'مشروبات': { icon: 'fa-glass-water', class: 'cat-drinks', emoji: '🥤', catImg: '' },
+            'أخرى': { icon: 'fa-utensils', class: 'cat-other', emoji: '🍽️', catImg: '' }
         };
         const LOGO_URL = "https://raw.githubusercontent.com/zadelrahmanzad-boop/baron2/refs/heads/main/EL.jpg";
 
@@ -1176,7 +1197,7 @@
             } catch (e) { document.getElementById('prodCode').value = '#' + (Math.floor(Math.random() * 9000) + 1000); }
         };
 
-        function getCategoryIcon(cat) { return CAT_ICONS[cat] || { icon: 'fa-utensils', class: 'cat-other' }; }
+        function getCategoryIcon(cat) { return CAT_ICONS[cat] || { icon: 'fa-utensils', class: 'cat-other', emoji: '🍽️', catImg: '' }; }
 
         async function loadPosProducts() {
             const box = document.getElementById('posProducts');
@@ -1202,6 +1223,12 @@
                     return;
                 }
                 snap.forEach(d => { const p = d.data(); p.id = d.id; allProducts.push(p); });
+                // Load category images from products that have catImage
+                allProducts.forEach(p => {
+                    if (p.category && CAT_ICONS[p.category] && p.catImage) {
+                        CAT_ICONS[p.category].catImg = p.catImage;
+                    }
+                });
                 currentSearchQuery = '';
                 const searchInput = document.getElementById('productSearch');
                 if (searchInput) searchInput.value = '';
@@ -1219,11 +1246,9 @@
             const box = document.getElementById('posProducts');
             try {
                 let filtered = allProducts;
-                // Category filter
                 if (currentFilter !== 'all') {
                     filtered = filtered.filter(p => p.category === currentFilter);
                 }
-                // Search filter (instant)
                 if (currentSearchQuery.trim()) {
                     const q = currentSearchQuery.trim().toLowerCase();
                     filtered = filtered.filter(p => {
@@ -1243,8 +1268,19 @@
                     const price = p.price != null ? p.price : 0;
                     const name = p.name || 'منتج بدون اسم';
                     const code = p.code || '';
+
+                    // Product image priority: product image > category image > gradient icon
+                    let imgHtml = '';
+                    if (p.imageUrl) {
+                        imgHtml = `<img src="${p.imageUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=\'fas ${catData.icon}\' style=\'font-size:40px;color:white;\'></i><span class=\'cat-label\'>${p.category || 'أخرى'}</span>'">`;
+                    } else if (catData.catImg) {
+                        imgHtml = `<img src="${catData.catImg}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=\'fas ${catData.icon}\' style=\'font-size:40px;color:white;\'></i><span class=\'cat-label\'>${p.category || 'أخرى'}</span>'">`;
+                    } else {
+                        imgHtml = `<i class="fas ${catData.icon}" style="font-size:40px;color:white;"></i><span class="cat-label">${p.category || 'أخرى'}</span>`;
+                    }
+
                     html += `<div class="product-card" onclick="addToCart('${p.id}')">
-                        <div class="cat-img ${catData.class}"><i class="fas ${catData.icon}"></i><span class="cat-label">${p.category || 'أخرى'}</span></div>
+                        <div class="cat-img ${catData.class}">${imgHtml}</div>
                         <div class="prod-body"><div class="code">${code}</div><div class="name">${name}</div><div class="price">${price} <span>ج.م</span></div></div>
                     </div>`;
                 });
@@ -1599,18 +1635,44 @@
             document.getElementById('prodCode').value = '';
             document.getElementById('prodName').value = '';
             document.getElementById('prodPrice').value = '';
+            document.getElementById('prodImage').value = '';
+            document.getElementById('catImage').value = '';
+            document.getElementById('prodImagePreview').style.display = 'none';
+            document.getElementById('catImagePreview').style.display = 'none';
             document.getElementById('newCatInput').value = '';
             document.getElementById('newCatRow').classList.add('hidden');
             document.getElementById('prodModalTitle').textContent = 'إضافة منتج جديد';
         };
+        window.previewProdImage = () => {
+            const url = document.getElementById('prodImage').value.trim();
+            if (url) {
+                document.getElementById('prodPreviewImg').src = url;
+                document.getElementById('prodImagePreview').style.display = 'block';
+            }
+        };
+        window.previewCatImage = () => {
+            const url = document.getElementById('catImage').value.trim();
+            if (url) {
+                document.getElementById('catPreviewImg').src = url;
+                document.getElementById('catImagePreview').style.display = 'block';
+            }
+        };
+
         window.saveProduct = async () => {
             const code = document.getElementById('prodCode').value.trim();
             const name = document.getElementById('prodName').value.trim();
             const price = parseFloat(document.getElementById('prodPrice').value);
             let cat = document.getElementById('prodCat').value;
             if (cat === '__new__') cat = document.getElementById('newCatInput').value.trim() || 'أخرى';
+            const imageUrl = document.getElementById('prodImage').value.trim();
+            const catImageUrl = document.getElementById('catImage').value.trim();
             if (!name || !price) { alert('املأ البيانات'); return; }
-            await addDoc(collection(db, "products"), { code: code || '', name, price, category: cat, createdAt: serverTimestamp(), createdBy: currentUser.uid });
+            const data = { code: code || '', name, price, category: cat, imageUrl: imageUrl || '', createdAt: serverTimestamp(), createdBy: currentUser.uid };
+            await addDoc(collection(db, "products"), data);
+            // Save category image to CAT_ICONS if provided
+            if (catImageUrl && CAT_ICONS[cat]) {
+                CAT_ICONS[cat].catImg = catImageUrl;
+            }
             closeProductModal();
             await loadProductsTable();
             await loadPosProducts();
