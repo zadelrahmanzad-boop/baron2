@@ -199,7 +199,7 @@
             overflow-wrap: break-word;
             word-wrap: break-word;
         }
-        .inv-logo { text-align: center; margin: 4px 0; }
+        .inv-logo { text-align: center; margin: 6px 0; }
         .inv-logo img { max-width: 140px; height: auto; display: inline-block; }
         .inv-header { text-align: center; margin-bottom: 8px; }
         .inv-header img { max-width: 80px; margin-bottom: 4px; }
@@ -946,16 +946,13 @@
                 if (currentFee === 0) document.getElementById('summaryDeliveryFee').value = 15;
             }
             if (method !== 'cash') {
-                // فيزا أو ديليفري: المدفوع = الإجمالي النهائي تلقائياً
                 const calc = getCartCalculations();
                 paidInput.value = calc.finalTotal;
                 paidInput.readOnly = true;
                 paidInput.style.background = '#f0f0f0';
             } else {
-                // كاش: المستخدم يدخل المبلغ يدوياً
                 paidInput.readOnly = false;
                 paidInput.style.background = 'white';
-                // paidInput.value = 0;  // نخلي القيمة اللي المستخدم يدخلها
             }
             updateCartSummary();
         };
@@ -1000,7 +997,6 @@
 
         window.checkout = async () => {
             if (cart.length === 0) return;
-            // لو فيزا أو ديليفري: المدفوع = الإجمالي تلقائياً
             if (cartPaymentMethod !== 'cash') {
                 const calcAuto = getCartCalculations();
                 document.getElementById('summaryPaid').value = calcAuto.finalTotal;
@@ -1061,9 +1057,6 @@
                 rows += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price}</td><td>${i.total.toLocaleString('en-US')}</td></tr>`;
             });
 
-            const qrData = `BARON|INV#${invoiceNumber}|${calc.finalTotal}|${dateStr}`;
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
-
             const invoiceHTML = `
             <div class="invoice-print-wrap" id="printInvoice">
                 <div class="inv-header">
@@ -1103,7 +1096,6 @@
                 <button class="btn btn-gry" onclick="closeInvoiceModal()">إغلاق</button>
             </div>`;
             modal.classList.add('show');
-            // طباعة تلقائية نسختين
             setTimeout(() => autoPrintDouble(), 400);
         }
 
@@ -1120,48 +1112,24 @@
         };
 
         window.printInvoiceDouble = async () => {
-            autoPrintDouble();
-        };
+            const wrap = document.getElementById('printInvoice');
+            if (!wrap) return;
+            const clone = wrap.cloneNode(true);
+            const separator = document.createElement('div');
+            separator.innerHTML = '<div style="border-top:2px dashed #333;margin:15px 0;text-align:center;font-size:10px;color:#888;padding:5px;">--- نسخة ثانية ---</div>';
+            wrap.parentNode.insertBefore(separator, wrap.nextSibling);
+            wrap.parentNode.insertBefore(clone, separator.nextSibling);
 
-        window.autoPrintDouble = () => {
-            const original = document.getElementById('printInvoice');
-            if (!original) return;
-
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
-            document.body.appendChild(iframe);
-
-            const doc = iframe.contentWindow.document;
-            const styleTag = document.querySelector('style');
-            const cssText = styleTag ? styleTag.innerText : '';
-
-            doc.open();
-            doc.write(`
-                <!DOCTYPE html>
-                <html lang="ar" dir="rtl">
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        @page { size: 58mm auto; margin: 0; }
-                        body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; }
-                        .page-break { page-break-after: always; height: 0; display: block; }
-                        ${cssText}
-                    </style>
-                </head>
-                <body style="margin:0;padding:0;direction:rtl;width:58mm;">
-                    ${original.outerHTML}
-                    <div class="page-break"></div>
-                    ${original.outerHTML}
-                </body>
-                </html>
-            `);
-            doc.close();
+            const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
+            allInvs.forEach(d => {
+                setDoc(doc(db, "invoices", d.id), { printed: true, printedAt: serverTimestamp(), copies: 2 }, { merge: true });
+            });
 
             setTimeout(() => {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-                setTimeout(() => iframe.remove(), 3000);
-            }, 600);
+                window.print();
+                // Remove clone after print dialog
+                setTimeout(() => { separator.remove(); clone.remove(); }, 1000);
+            }, 300);
         };
 
         window.closeInvoiceModal = () => { document.getElementById('invoiceModal').classList.remove('show'); };
@@ -1604,6 +1572,7 @@
             await signOut(auth);
             window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
         };
+    </script>
 
     <!-- Printer Settings Modal -->
     <div class="modal-bg" id="printerModal">
@@ -1646,14 +1615,13 @@
             </div>
         </div>
     </div>
-    
+
+
         // ========== QZ TRAY PRINTER INTEGRATION ==========
         let qzPrinter = localStorage.getItem('qzPrinter') || null;
         let qzConnected = false;
         let qzPrinterCopies = parseInt(localStorage.getItem('qzPrinterCopies') || '2');
         let qzPaperWidth = localStorage.getItem('qzPaperWidth') || '58';
-
-        // Load saved settings on startup
         if (qzPrinter) { document.getElementById('printerStatusDot').style.background = '#27ae60'; }
 
         window.openPrinterModal = () => {
@@ -1673,7 +1641,6 @@
                 if (!qz.websocket.isActive()) { await qz.websocket.connect(); }
                 qzConnected = true;
                 updateQZStatus('متصل', 'var(--success)');
-
                 const printers = await qz.printers.find();
                 const sel = document.getElementById('printerSelect');
                 sel.innerHTML = '<option value="">-- اختر طابعة --</option>';
@@ -1689,19 +1656,13 @@
             } catch (e) {
                 updateQZStatus('فشل: ' + e.message, 'var(--danger)');
                 btn.disabled = false; btn.innerHTML = '<i class="fas fa-plug"></i> إعادة توصيل';
-                alert('مش قادر أتواصل مع QZ Tray.
-
-1. تأكد إن البرنامج شغال على الجهاز
-2. جرّب تفتحه كـ Administrator
-3. لو مش مثبّت: https://qz.io');
+                alert('مش قادر أتواصل مع QZ Tray.\n\n1. تأكد إن البرنامج شغال على الجهاز\n2. جرّب تفتحه كـ Administrator\n3. لو مش مثبّت: https://qz.io');
             }
         };
-
         function updateQZStatus(text, color) {
             const el = document.getElementById('qzStatus');
             el.textContent = text; el.style.color = color || '#888';
         }
-
         window.savePrinterSettings = () => {
             const sel = document.getElementById('printerSelect');
             const copies = document.getElementById('printerCopies').value;
@@ -1716,17 +1677,9 @@
                 document.getElementById('printerStatusDot').style.background = '#27ae60';
                 alert('تم حفظ إعدادات الطابعة: ' + qzPrinter);
                 closePrinterModal();
-            } else {
-                alert('اختر طابعة الأول');
-            }
+            } else { alert('اختر طابعة الأول'); }
         };
-
-        // Try auto-connect on load if printer was saved
-        if (qzPrinter) {
-            setTimeout(() => {
-                connectQZ().catch(() => {});
-            }, 2000);
-        }
+        if (qzPrinter) { setTimeout(() => { connectQZ().catch(() => {}); }, 2000); }
 
         // Override autoPrintDouble to use QZ if available
         window.autoPrintDouble = async () => {
@@ -1734,87 +1687,30 @@
                 try {
                     const original = document.getElementById('printInvoice');
                     if (!original) return;
-
-                    // Build full HTML for printing
                     const styleTag = document.querySelector('style');
                     const cssText = styleTag ? styleTag.innerText : '';
                     const paperW = qzPaperWidth === 'A4' ? '210mm' : qzPaperWidth + 'mm';
-
-                    const htmlContent = `
-                        <!DOCTYPE html>
-                        <html lang="ar" dir="rtl">
-                        <head>
-                            <meta charset="UTF-8">
-                            <style>
-                                @page { size: ${paperW} auto; margin: 0; }
-                                body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: ${paperW}; direction: rtl; }
-                                .page-break { page-break-after: always; height: 0; display: block; }
-                                ${cssText}
-                            </style>
-                        </head>
-                        <body style="margin:0;padding:0;direction:rtl;width:${paperW};">
-                            ${original.outerHTML}
-                            <div class="page-break"></div>
-                            ${original.outerHTML}
-                        </body>
-                        </html>
-                    `;
-
+                    const htmlContent = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: ${paperW} auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: ${paperW}; direction: rtl; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:${paperW};">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}</body></html>`;
                     const config = qz.configs.create(qzPrinter, { copies: qzPrinterCopies });
                     await qz.print(config, [{ type: 'html', format: 'plain', data: htmlContent }]);
-
-                    // Mark as printed in DB
                     const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
-                    allInvs.forEach(d => {
-                        setDoc(doc(db, "invoices", d.id), { printed: true, printedAt: serverTimestamp(), copies: qzPrinterCopies, printer: qzPrinter }, { merge: true });
-                    });
+                    allInvs.forEach(d => { setDoc(doc(db, "invoices", d.id), { printed: true, printedAt: serverTimestamp(), copies: qzPrinterCopies, printer: qzPrinter }, { merge: true }); });
                     return;
-                } catch (e) {
-                    console.error('QZ Print failed, falling back to iframe:', e);
-                }
+                } catch (e) { console.error('QZ Print failed, falling back to iframe:', e); }
             }
-
-            // Fallback to iframe printing
             const original = document.getElementById('printInvoice');
             if (!original) return;
-
             const iframe = document.createElement('iframe');
             iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
             document.body.appendChild(iframe);
-
             const doc = iframe.contentWindow.document;
             const styleTag = document.querySelector('style');
             const cssText = styleTag ? styleTag.innerText : '';
-
             doc.open();
-            doc.write(`
-                <!DOCTYPE html>
-                <html lang="ar" dir="rtl">
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        @page { size: 58mm auto; margin: 0; }
-                        body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; }
-                        .page-break { page-break-after: always; height: 0; display: block; }
-                        ${cssText}
-                    </style>
-                </head>
-                <body style="margin:0;padding:0;direction:rtl;width:58mm;">
-                    ${original.outerHTML}
-                    <div class="page-break"></div>
-                    ${original.outerHTML}
-                </body>
-                </html>
-            `);
+            doc.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: 58mm auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:58mm;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}</body></html>`);
             doc.close();
-
-            setTimeout(() => {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-                setTimeout(() => iframe.remove(), 3000);
-            }, 600);
+            setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => iframe.remove(), 3000); }, 600);
         };
 
-</script>
 </body>
 </html>
