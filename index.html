@@ -186,7 +186,7 @@
             margin: 0 auto; 
             padding: 0; 
             box-sizing: border-box; 
-            font-size: 16px; 
+            font-size: 18px; 
             direction: rtl; 
             overflow-wrap: break-word; 
             word-wrap: break-word; 
@@ -195,29 +195,30 @@
         .inv-logo { text-align: center; margin: 0; width: 100%; }
         .inv-logo img { width: 100%; max-width: 58mm; height: auto; display: block; margin: 0 auto; }
         .inv-header { text-align: center; margin-bottom: 4px; width: 100%; }
-        .inv-header .logo-text { font-size: 32px; font-weight: 900; letter-spacing: 4px; display: block; }
-        .inv-header .sub-text { font-size: 14px; color: #222; font-weight: 800; }
+        .inv-header .logo-text { font-size: 36px; font-weight: 900; letter-spacing: 4px; display: block; }
+        .inv-header .sub-text { font-size: 16px; color: #222; font-weight: 800; }
         .inv-qr { text-align: center; margin: 2px 0; }
         .inv-qr img { width: 65px; height: 65px; }
-        .inv-meta { text-align: center; font-size: 15px; margin-bottom: 6px; line-height: 1.5; font-weight: 800; }
+        .inv-meta { text-align: center; font-size: 16px; margin-bottom: 6px; line-height: 1.5; font-weight: 800; }
         .inv-meta strong { font-weight: 900; }
 
-        .inv-table { width: 100%; font-size: 15px; border-collapse: collapse; margin: 2px 0; }
-        .inv-table th { text-align: center; padding: 4px 1px; border-bottom: 2px dashed #000; font-size: 13px; font-weight: 900; background: none; }
-        .inv-table td { padding: 3px 1px; border-bottom: 1px dashed #666; text-align: center; font-size: 15px; font-weight: 800; }
-        .inv-table td:first-child { text-align: right; padding-right: 1px; }
-        .inv-table td:nth-child(2) { text-align: center; }
-        .inv-table td:nth-child(3) { text-align: center; }
-        .inv-table td:last-child { text-align: center; padding-left: 1px; }
-        .inv-table .note-row td { padding: 2px 1px; font-size: 12px; color: #333; font-weight: 700; border-bottom: 1px dashed #999; text-align: right; }
+        .inv-table { width: 100%; font-size: 16px; border-collapse: collapse; margin: 2px 0; table-layout: fixed; }
+        .inv-table th { text-align: center; padding: 4px 1px; border-bottom: 2px dashed #000; font-size: 14px; font-weight: 900; background: none; }
+        .inv-table td { padding: 3px 1px; border-bottom: 1px dashed #666; text-align: center; font-size: 16px; font-weight: 800; vertical-align: middle; }
+        .inv-table td:first-child { text-align: right; padding-right: 2px; width: 55%; }
+        .inv-table td:nth-child(2) { text-align: center; width: 12%; }
+        .inv-table td:nth-child(3) { text-align: center; width: 16%; }
+        .inv-table td:last-child { text-align: center; padding-left: 2px; width: 17%; }
+        .inv-table .note-row td { padding: 2px 2px 3px; font-size: 13px; color: #222; font-weight: 700; border-bottom: 1px dashed #999; text-align: right; background: #fffbf0; }
+        .inv-table .note-row td div { margin: 1px 0; }
 
-        .inv-footer-box { border: 2px solid #000; padding: 4px 3px; margin-top: 4px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        .inv-footer-box { border: 2px solid #000; padding: 4px 3px; margin-top: 4px; font-size: 15px; width: 100%; box-sizing: border-box; }
         .inv-footer-box .f-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
         .inv-footer-box .f-row .lbl { font-weight: 700; }
         .inv-footer-box .f-row .val { font-weight: 900; }
-        .inv-footer-box .f-row.total-row { border-top: 2px solid #000; padding-top: 3px; margin-top: 3px; font-size: 18px; font-weight: 900; }
-        .inv-phone { text-align: center; font-size: 15px; font-weight: 900; margin-top: 6px; padding-top: 4px; border-top: 2px dashed #333; }
-        .inv-thanks { text-align: center; font-size: 13px; color: #333; margin-top: 2px; font-weight: 800; }
+        .inv-footer-box .f-row.total-row { border-top: 2px solid #000; padding-top: 3px; margin-top: 3px; font-size: 20px; font-weight: 900; }
+        .inv-phone { text-align: center; font-size: 16px; font-weight: 900; margin-top: 6px; padding-top: 4px; border-top: 2px dashed #333; }
+        .inv-thanks { text-align: center; font-size: 14px; color: #333; margin-top: 2px; font-weight: 800; }
 
         /* Invoice Modal */
         .invoice-modal-box { max-width: 360px !important; padding: 15px !important; }
@@ -1302,14 +1303,51 @@
 
         window.removeFromCart = (pid) => { cart = cart.filter(x => x.id !== pid); renderCart(); };
 
+        let noteTargetItemId = null;
+
         window.addNoteToCartItem = (pid) => {
             const item = cart.find(x => x.id === pid);
             if (!item) return;
-            const note = prompt('أضف ملاحظة للمنتج (اكتب كل ملاحظة في سطر جديد):', item.note || '');
-            if (note !== null) {
-                item.note = note.trim();
+            noteTargetItemId = pid;
+            document.getElementById('customNoteInput').value = item.note || '';
+            document.getElementById('noteModal').classList.add('show');
+        };
+
+        window.closeNoteModal = () => {
+            document.getElementById('noteModal').classList.remove('show');
+            noteTargetItemId = null;
+        };
+
+        window.selectQuickNote = (note) => {
+            const input = document.getElementById('customNoteInput');
+            const current = input.value.trim();
+            if (current) {
+                input.value = current + '\n' + note;
+            } else {
+                input.value = note;
+            }
+            input.focus();
+        };
+
+        window.saveNote = () => {
+            if (!noteTargetItemId) return;
+            const note = document.getElementById('customNoteInput').value.trim();
+            const item = cart.find(x => x.id === noteTargetItemId);
+            if (item) {
+                item.note = note;
                 renderCart();
             }
+            closeNoteModal();
+        };
+
+        window.clearNote = () => {
+            if (!noteTargetItemId) return;
+            const item = cart.find(x => x.id === noteTargetItemId);
+            if (item) {
+                item.note = '';
+                renderCart();
+            }
+            closeNoteModal();
         };
         window.clearCart = () => { cart = []; renderCart(); };
 
@@ -1371,7 +1409,7 @@
             let html = '';
             cart.forEach(item => {
                 const itemTotal = item.price * item.qty;
-                const noteLines = item.note ? item.note.split(/\n|\r/).map(l => l.trim()).filter(l => l) : [];
+                const noteLines = item.note ? item.note.toString().split(/\n|\r/).map(l => l.trim()).filter(l => l) : [];
                 const noteDisplay = noteLines.length ? `<div style="font-size:11px;color:var(--warning);margin-top:2px;font-weight:700;line-height:1.4;">${noteLines.map(l => `<div><i class="fas fa-sticky-note" style="font-size:9px;margin-left:3px;"></i> ${l}</div>`).join('')}</div>` : '';
                 html += `<div class="cart-item" style="align-items:flex-start;">
                     <div class="cart-item-info" style="flex:1;">
@@ -1466,12 +1504,14 @@
 
             let rows = '';
             items.forEach(i => {
-                const noteText = i.note ? i.note.toString().trim() : '';
+                const noteText = (i.note || '').toString().trim();
                 let noteRow = '';
                 if (noteText) {
                     const noteLines = noteText.split(/\n|\r/).map(l => l.trim()).filter(l => l);
-                    const noteHtml = noteLines.map(line => `<div style="margin:1px 0;">${line}</div>`).join('');
-                    noteRow = `<tr class="note-row"><td colspan="4"><i class="fas fa-sticky-note" style="color:#d68910;margin-left:4px;"></i> ${noteHtml}</td></tr>`;
+                    if (noteLines.length > 0) {
+                        const noteHtml = noteLines.map(line => `<div>${line}</div>`).join('');
+                        noteRow = `<tr class="note-row"><td colspan="4"><i class="fas fa-sticky-note" style="color:#d68910;margin-left:4px;"></i> ${noteHtml}</td></tr>`;
+                    }
                 }
                 rows += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price}</td><td>${i.total.toLocaleString('en-US')}</td></tr>${noteRow}`;
             });
@@ -2192,7 +2232,7 @@
                     const styleTag = document.querySelector('style');
                     const cssText = styleTag ? styleTag.innerText : '';
                     const paperW = qzPaperWidth === 'A4' ? '210mm' : qzPaperWidth + 'mm';
-                    const htmlContent = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: ${paperW} auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: ${paperW}; direction: rtl; font-weight: 800; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:${paperW};font-weight:800;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}</body></html>`;
+                    const htmlContent = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: ${paperW} auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: ${paperW}; direction: rtl; font-weight: 900; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:${paperW};font-weight:900;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}</body></html>`;
                     const config = qz.configs.create(qzPrinter, { copies: qzPrinterCopies });
                     await qz.print(config, [{ type: 'html', format: 'plain', data: htmlContent }]);
                     const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
@@ -2209,12 +2249,45 @@
             const styleTag = document.querySelector('style');
             const cssText = styleTag ? styleTag.innerText : '';
             doc.open();
-            doc.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: 58mm auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; font-weight: 800; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:58mm;font-weight:800;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}</body></html>`);
+            doc.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: 58mm auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; font-weight: 900; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:58mm;font-weight:900;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}</body></html>`);
             doc.close();
             setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => iframe.remove(), 3000); }, 600);
         };
 
 </script>
+
+    <!-- Quick Note Modal -->
+    <div class="modal-bg" id="noteModal">
+        <div class="modal-box" style="max-width:380px;">
+            <button class="modal-close" onclick="closeNoteModal()">&times;</button>
+            <h2><i class="fas fa-sticky-note" style="color:var(--warning);"></i> ملاحظة المنتج</h2>
+            <div style="margin-bottom:15px;">
+                <label style="display:block;margin-bottom:8px;font-weight:700;font-size:14px;">اختر ملاحظة سريعة:</label>
+                <div id="quickNotesList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('بدون خس')">بدون خس</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('بدون طماطم')">بدون طماطم</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('بدون بصل')">بدون بصل</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Spicy')">Spicy 🔥</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Extra Sauce')">Extra Sauce</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Well Done')">Well Done</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Medium')">Medium</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Extra Cheese')">Extra Cheese 🧀</button>
+                </div>
+            </div>
+            <div class="form-row">
+                <label>أو اكتب ملاحظة مخصصة:</label>
+                <textarea id="customNoteInput" rows="3" placeholder="اكتب هنا..." 
+                    style="width:100%;padding:10px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';font-size:14px;resize:vertical;"
+                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveNote();}"></textarea>
+                <div style="font-size:11px;color:#888;margin-top:4px;">اضغط Enter للسطر الجديد</div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-gry" onclick="closeNoteModal()">إلغاء</button>
+                <button class="btn btn-red" onclick="clearNote()" style="margin-right:auto;"><i class="fas fa-trash"></i> مسح</button>
+                <button class="btn btn-main" onclick="saveNote()">حفظ</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Printer Settings Modal -->
     <div class="modal-bg" id="printerModal">
