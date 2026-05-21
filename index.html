@@ -537,9 +537,15 @@
                 <div class="card">
                     <div class="card-head">
                         <h3>تقرير المبيعات اليومية</h3>
-                        <div class="btns">
-                            <button class="btn btn-sec" onclick="loadReports()"><i class="fas fa-sync-alt"></i> تحديث</button>
-                            <button class="btn btn-gry" onclick="printReports()"><i class="fas fa-print"></i> طباعة / حفظ</button>
+                        <div class="btns" style="flex-wrap:wrap;gap:8px;">
+                            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                <label style="font-size:13px;font-weight:700;color:#444;">من:</label>
+                                <input type="date" id="reportFrom" style="padding:6px 10px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';font-size:13px;">
+                                <label style="font-size:13px;font-weight:700;color:#444;">إلى:</label>
+                                <input type="date" id="reportTo" style="padding:6px 10px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';font-size:13px;">
+                                <button class="btn btn-sec" onclick="loadReports()"><i class="fas fa-filter"></i> عرض التقرير</button>
+                                <button class="btn btn-gry" onclick="printReports()"><i class="fas fa-print"></i> طباعة</button>
+                            </div>
                         </div>
                     </div>
                     <table>
@@ -726,6 +732,9 @@
                     <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_users" value="users"><label for="perm_users">المستخدمين</label></div>
                     <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_settings" value="settings"><label for="perm_settings">الإعدادات</label></div>
                     <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_change_password" value="change_password"><label for="perm_change_password">تغيير كلمة السر</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_print_invoices" value="print_invoices"><label for="perm_print_invoices"><i class="fas fa-print" style="color:var(--info);"></i> طباعة الفواتير</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_delete_invoices" value="delete_invoices"><label for="perm_delete_invoices"><i class="fas fa-trash" style="color:var(--danger);"></i> حذف الفواتير</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_print_reports" value="print_reports"><label for="perm_print_reports"><i class="fas fa-file-alt" style="color:var(--success);"></i> طباعة التقارير</label></div>
                     <div class="perm-item" onclick="togglePerm(this)" style="grid-column:1/-1;background:#fff3cd;border-color:var(--warning);"><input type="checkbox" id="perm_monitor_only" value="monitor_only"><label for="perm_monitor_only"><i class="fas fa-eye" style="color:var(--warning);"></i> متابعة فقط (بدون بيع)</label></div>
                 </div>
             </div>
@@ -759,8 +768,8 @@
         let cartPaymentMethod = 'cash';
         let isMonitorOnly = false; // true = can view but cannot sell
 
-        const DEFAULT_PERMS = { pos: true, products: true, invoices: true, reports: true, users: false, settings: false, change_password: true, monitor_only: false };
-        const PERM_LABELS = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين', settings: 'الإعدادات', change_password: 'تغيير كلمة السر', monitor_only: 'متابعة فقط (بدون بيع)' };
+        const DEFAULT_PERMS = { pos: true, products: true, invoices: true, reports: true, users: false, settings: false, change_password: true, monitor_only: false, print_invoices: true, delete_invoices: false, print_reports: true };
+        const PERM_LABELS = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين', settings: 'الإعدادات', change_password: 'تغيير كلمة السر', monitor_only: 'متابعة فقط (بدون بيع)', print_invoices: 'طباعة الفواتير', delete_invoices: 'حذف الفواتير', print_reports: 'طباعة التقارير' };
         const CAT_ICONS = {
             'تشكن': { icon: 'fa-drumstick-bite', class: 'cat-chicken' },
             'برجر': { icon: 'fa-hamburger', class: 'cat-burger' },
@@ -1551,11 +1560,12 @@
             </div>`;
 
             box.innerHTML = invoiceHTML + `
-            <div class="no-print" style="text-align:center;margin-top:15px;display:flex;gap:8px;justify-content:center;">
+            <div class="no-print" style="text-align:center;margin-top:15px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
                 <button class="btn btn-gry" onclick="closeInvoiceModal()">إغلاق</button>
+                <button class="btn btn-blu" onclick="printInvoiceFromModal()"><i class="fas fa-print"></i> طباعة</button>
+                <button class="btn btn-drk" onclick="printInvoiceDoubleFromModal()"><i class="fas fa-copy"></i> طباعة نسختين</button>
             </div>`;
             modal.classList.add('show');
-            setTimeout(() => autoPrintDouble(), 400);
         }
 
         window.printInvoiceSingle = async () => {
@@ -1570,7 +1580,17 @@
             window.print();
         };
 
-        window.printInvoiceDouble = async () => {
+        window.printInvoiceFromModal = async () => {
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.print_invoices) { alert('ليس لديك صلاحية طباعة الفواتير'); return; }
+            const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
+            allInvs.forEach(d => { setDoc(doc(db, "invoices", d.id), { printed: true, printedAt: serverTimestamp(), copies: 1 }, { merge: true }); });
+            window.print();
+        };
+
+        window.printInvoiceDoubleFromModal = async () => {
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.print_invoices) { alert('ليس لديك صلاحية طباعة الفواتير'); return; }
             const wrap = document.getElementById('printInvoice');
             if (!wrap) return;
             const clone = wrap.cloneNode(true);
@@ -1580,15 +1600,35 @@
             wrap.parentNode.insertBefore(clone, separator.nextSibling);
 
             const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
-            allInvs.forEach(d => {
-                setDoc(doc(db, "invoices", d.id), { printed: true, printedAt: serverTimestamp(), copies: 2 }, { merge: true });
-            });
+            allInvs.forEach(d => { setDoc(doc(db, "invoices", d.id), { printed: true, printedAt: serverTimestamp(), copies: 2 }, { merge: true }); });
 
             setTimeout(() => {
                 window.print();
-                // Remove clone after print dialog
                 setTimeout(() => { separator.remove(); clone.remove(); }, 1000);
             }, 300);
+        };
+
+        window.printInvoiceFromTable = async (id) => {
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.print_invoices) { alert('ليس لديك صلاحية طباعة الفواتير'); return; }
+            const d = await getDoc(doc(db, "invoices", id));
+            if (!d.exists()) return;
+            const inv = d.data();
+            const calc = {
+                subTotal: inv.subTotal || inv.total || 0,
+                discountPercent: inv.discountPercent || 0,
+                discountAmount: inv.discountAmount || 0,
+                deliveryFee: inv.deliveryFee || 0,
+                finalTotal: inv.total || 0,
+                paidAmount: inv.paidAmount || 0,
+                remaining: inv.change || 0
+            };
+            cartPaymentMethod = inv.paymentMethod || 'cash';
+            showInvoice(d.id, inv.invoiceNumber || d.id.slice(-6), inv.items || [], calc);
+            setTimeout(() => {
+                window.print();
+                setDoc(doc(db, "invoices", id), { printed: true, printedAt: serverTimestamp() }, { merge: true });
+            }, 600);
         };
 
         window.closeInvoiceModal = () => { document.getElementById('invoiceModal').classList.remove('show'); };
@@ -1746,7 +1786,17 @@
                     const date = inv.createdAt ? new Date(inv.createdAt.toDate()).toLocaleString('ar-EG') : '-';
                     const payLabels = { cash: 'كاش', visa: 'فيزا', delivery: 'ديليفري' };
                     const payTag = inv.paymentMethod === 'cash' ? 'tag-grn' : inv.paymentMethod === 'visa' ? 'tag-blu' : 'tag-ylw';
-                    html += `<tr><td><strong>#${invNum}</strong></td><td>${date}</td><td>${inv.itemCount || 0} عنصر</td><td style="color:var(--primary);font-weight:800;">${inv.subTotal || inv.total || 0} ج.م</td><td>${inv.deliveryFee || 0} ج.م</td><td style="color:var(--success);">${inv.discountAmount || 0} ج.م</td><td style="font-weight:800;">${inv.total || 0} ج.م</td><td><span class="tag ${payTag}">${payLabels[inv.paymentMethod] || inv.paymentMethod}</span></td><td>${inv.cashierName || '-'}</td><td><button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-eye"></i></button>${isAdmin ? `<button class="btn btn-red" onclick="deleteInvoice('${d.id}')" style="padding:5px 10px;"><i class="fas fa-trash"></i></button>` : ''}</td></tr>`;
+                    let viewBtn = `<button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;" title="عرض"><i class="fas fa-eye"></i></button>`;
+                    let printBtn = '';
+                    let deleteBtn = '';
+                    const userPerms = userData?.permissions || DEFAULT_PERMS;
+                    if (isAdmin || userPerms.print_invoices) {
+                        printBtn = ` <button class="btn btn-blu" onclick="printInvoiceFromTable('${d.id}')" style="padding:5px 10px;" title="طباعة"><i class="fas fa-print"></i></button>`;
+                    }
+                    if (isAdmin || userPerms.delete_invoices) {
+                        deleteBtn = ` <button class="btn btn-red" onclick="deleteInvoice('${d.id}')" style="padding:5px 10px;" title="حذف"><i class="fas fa-trash"></i></button>`;
+                    }
+                    html += `<tr><td><strong>#${invNum}</strong></td><td>${date}</td><td>${inv.itemCount || 0} عنصر</td><td style="color:var(--primary);font-weight:800;">${inv.subTotal || inv.total || 0} ج.م</td><td>${inv.deliveryFee || 0} ج.م</td><td style="color:var(--success);">${inv.discountAmount || 0} ج.م</td><td style="font-weight:800;">${inv.total || 0} ج.م</td><td><span class="tag ${payTag}">${payLabels[inv.paymentMethod] || inv.paymentMethod}</span></td><td>${inv.cashierName || '-'}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap;">${viewBtn}${printBtn}${deleteBtn}</div></td></tr>`;
                 });
                 tbody.innerHTML = html;
             } catch (e) { tbody.innerHTML = '<tr><td colspan="10" class="empty">خطأ</td></tr>'; }
@@ -1769,7 +1819,8 @@
             showInvoice(d.id, inv.invoiceNumber || d.id.slice(-6), inv.items || [], calc);
         };
         window.deleteInvoice = async (id) => {
-            if (!isAdmin) { alert('للمدير فقط'); return; }
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.delete_invoices) { alert('ليس لديك صلاحية حذف الفواتير'); return; }
             if (!confirm('هل أنت متأكد من حذف الفاتورة؟')) return;
             await deleteDoc(doc(db, "invoices", id));
             loadInvoicesTable(); loadStats();
@@ -1785,13 +1836,23 @@
         };
 
         window.printDayReport = () => { window.print(); };
-        window.printReports = () => { window.print(); };
+        window.printReports = () => {
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.print_reports) { alert('ليس لديك صلاحية طباعة التقارير'); return; }
+            window.print();
+        };
         window.printLoginLog = () => { window.print(); };
 
         async function loadReports() {
             try {
+                const fromVal = document.getElementById('reportFrom').value;
+                const toVal = document.getElementById('reportTo').value;
+                const fromDate = fromVal ? new Date(fromVal) : null;
+                const toDate = toVal ? new Date(toVal) : null;
+                if (toDate) toDate.setHours(23, 59, 59, 999);
+
                 const snap = await getDocs(collection(db, "invoices"));
-                let todayTotal = 0, weekTotal = 0, monthTotal = 0;
+                let todayTotal = 0, weekTotal = 0, monthTotal = 0, filteredTotal = 0, filteredCount = 0;
                 const now = new Date();
                 const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
                 const weekStart = new Date(now); weekStart.setDate(weekStart.getDate() - 7);
@@ -1804,13 +1865,24 @@
                     if (!inv.createdAt || !inv.createdAt.toDate) return;
                     const date = inv.createdAt.toDate();
                     const total = inv.total || 0;
+
+                    // Date filter check
+                    let inRange = true;
+                    if (fromDate && date < fromDate) inRange = false;
+                    if (toDate && date > toDate) inRange = false;
+
+                    if (inRange) {
+                        filteredTotal += total;
+                        filteredCount++;
+                        (inv.items || []).forEach(item => { productSales[item.name] = (productSales[item.name] || 0) + (item.qty || 1); });
+                        const dayKey = date.toISOString().split('T')[0];
+                        if (!dailyMap[dayKey]) dailyMap[dayKey] = { count: 0, total: 0 };
+                        dailyMap[dayKey].count++; dailyMap[dayKey].total += total;
+                    }
+
                     if (date >= todayStart) todayTotal += total;
                     if (date >= weekStart) weekTotal += total;
                     if (date >= monthStart) monthTotal += total;
-                    (inv.items || []).forEach(item => { productSales[item.name] = (productSales[item.name] || 0) + (item.qty || 1); });
-                    const dayKey = date.toISOString().split('T')[0];
-                    if (!dailyMap[dayKey]) dailyMap[dayKey] = { count: 0, total: 0 };
-                    dailyMap[dayKey].count++; dailyMap[dayKey].total += total;
                 });
 
                 document.getElementById('repTodaySales').textContent = todayTotal.toLocaleString('ar-EG') + ' ج.م';
@@ -1820,15 +1892,17 @@
                 document.getElementById('repTopProduct').textContent = topProduct ? topProduct[0] : '-';
 
                 const dailyBody = document.getElementById('dailyReportBody');
-                const sortedDays = Object.entries(dailyMap).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 30);
+                const sortedDays = Object.entries(dailyMap).sort((a, b) => b[0].localeCompare(a[0]));
                 if (sortedDays.length === 0) {
-                    dailyBody.innerHTML = '<tr><td colspan="4" class="empty"><i class="fas fa-chart-bar"></i><p>لا توجد بيانات</p></td></tr>';
+                    dailyBody.innerHTML = '<tr><td colspan="4" class="empty"><i class="fas fa-chart-bar"></i><p>لا توجد بيانات في الفترة المحددة</p></td></tr>';
                 } else {
                     let html = '';
                     sortedDays.forEach(([day, data]) => {
                         const d = new Date(day);
                         html += `<tr><td>${d.toLocaleDateString('ar-EG')}</td><td>${data.count}</td><td style="color:var(--primary);font-weight:800;">${data.total.toLocaleString('ar-EG')} ج.م</td><td>${Math.round(data.total / data.count).toLocaleString('ar-EG')} ج.م</td></tr>`;
                     });
+                    // Add summary row
+                    html += `<tr style="background:#f8f9fa;font-weight:800;border-top:2px solid var(--dark);"><td>الإجمالي</td><td>${filteredCount}</td><td style="color:var(--primary);">${filteredTotal.toLocaleString('ar-EG')} ج.م</td><td>${filteredCount > 0 ? Math.round(filteredTotal / filteredCount).toLocaleString('ar-EG') : 0} ج.م</td></tr>`;
                     dailyBody.innerHTML = html;
                 }
             } catch (e) { console.error(e); }
@@ -2047,7 +2121,13 @@
                     const perms = u.permissions || DEFAULT_PERMS;
                     let permIcons = '';
                     Object.entries(PERM_LABELS).forEach(([key, label]) => {
-                        if (perms[key]) permIcons += `<span class="tag tag-blu" style="margin:2px;font-size:10px;padding:2px 8px;" title="${label}">${label}</span>`;
+                        if (perms[key]) {
+                            let tagClass = 'tag-blu';
+                            if (key === 'delete_invoices') tagClass = 'tag-red';
+                            else if (key === 'print_invoices' || key === 'print_reports') tagClass = 'tag-grn';
+                            else if (key === 'monitor_only') tagClass = 'tag-ylw';
+                            permIcons += `<span class="tag ${tagClass}" style="margin:2px;font-size:10px;padding:2px 8px;" title="${label}">${label}</span>`;
+                        }
                     });
                     if (!permIcons) permIcons = '<span style="color:#ccc;font-size:12px;">لا توجد</span>';
 
