@@ -528,6 +528,12 @@
 
             <!-- REPORTS SECTION -->
             <div class="section-view" id="view-reports">
+                <div class="stats-row" style="margin-bottom:20px;">
+                    <div class="stat-box s1"><div class="stat-icon"><i class="fas fa-shopping-bag"></i></div><div class="stat-label">المبيعات اليوم</div><div class="stat-num" id="repStSales">0</div></div>
+                    <div class="stat-box s2"><div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div><div class="stat-label">الإيرادات</div><div class="stat-num" id="repStRevenue">0 ج.م</div></div>
+                    <div class="stat-box s3"><div class="stat-icon"><i class="fas fa-utensils"></i></div><div class="stat-label">المنتجات</div><div class="stat-num" id="repStProducts">0</div></div>
+                    <div class="stat-box s4"><div class="stat-icon"><i class="fas fa-receipt"></i></div><div class="stat-label">إجمالي الفواتير</div><div class="stat-num" id="repStInvoices">0</div></div>
+                </div>
                 <div class="stats-row">
                     <div class="stat-box s1"><div class="stat-icon"><i class="fas fa-calendar-day"></i></div><div class="stat-label">مبيعات اليوم</div><div class="stat-num" id="repTodaySales">0 ج.م</div></div>
                     <div class="stat-box s2"><div class="stat-icon"><i class="fas fa-calendar-week"></i></div><div class="stat-label">مبيعات الأسبوع</div><div class="stat-num" id="repWeekSales">0 ج.م</div></div>
@@ -592,6 +598,96 @@
                         </table>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Invoice Modal -->
+    <div class="modal-bg" id="editInvoiceModal">
+        <div class="modal-box wide" style="max-width:700px;">
+            <button class="modal-close" onclick="closeEditInvoiceModal()">&times;</button>
+            <h2><i class="fas fa-edit" style="color:var(--warning);"></i> تعديل الفاتورة</h2>
+            <input type="hidden" id="editInvoiceId">
+            <div style="background:#fff3cd; padding:10px 15px; border-radius:10px; color:#856404; font-size:13px; margin-bottom:15px;">
+                <i class="fas fa-info-circle"></i> يمكنك إضافة منتجات أو تعديل الكميات أو حذف منتج من الفاتورة. سيتم تسجيل سبب التعديل تلقائياً.
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+                <div class="form-row" style="margin:0;">
+                    <label>رقم الفاتورة</label>
+                    <input type="text" id="editInvoiceNum" readonly style="background:#f5f5f5;">
+                </div>
+                <div class="form-row" style="margin:0;">
+                    <label>تاريخ الفاتورة</label>
+                    <input type="text" id="editInvoiceDate" readonly style="background:#f5f5f5;">
+                </div>
+            </div>
+            <div class="card" style="margin-bottom:15px;">
+                <div class="card-head" style="padding:12px 20px;">
+                    <h3 style="font-size:15px;">عناصر الفاتورة</h3>
+                    <button class="btn btn-main" onclick="openAddProductToInvoice()" style="padding:6px 12px; font-size:12px;"><i class="fas fa-plus"></i> إضافة منتج</button>
+                </div>
+                <table>
+                    <thead><tr><th>المنتج</th><th>السعر</th><th>الكمية</th><th>الإجمالي</th><th>ملاحظة</th><th>إجراءات</th></tr></thead>
+                    <tbody id="editInvoiceItemsBody"></tbody>
+                </table>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+                <div class="form-row" style="margin:0;">
+                    <label>نسبة الخصم %</label>
+                    <input type="number" id="editInvoiceDiscount" value="0" min="0" max="100" onchange="recalcEditInvoice()" oninput="recalcEditInvoice()">
+                </div>
+                <div class="form-row" style="margin:0;">
+                    <label>ديليفري (ج.م)</label>
+                    <input type="number" id="editInvoiceDelivery" value="0" min="0" onchange="recalcEditInvoice()" oninput="recalcEditInvoice()">
+                </div>
+            </div>
+            <div style="background:#f8f9fa; padding:12px 15px; border-radius:10px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:13px;">
+                    <span>المجموع:</span><strong id="editInvoiceSubTotal">0 ج.م</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:13px; color:var(--success);">
+                    <span>الخصم:</span><strong id="editInvoiceDiscountAmt">0 ج.م</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:800; color:var(--primary); border-top:1px dashed #ddd; padding-top:6px;">
+                    <span>الإجمالي النهائي:</span><strong id="editInvoiceTotal">0 ج.م</strong>
+                </div>
+            </div>
+            <div class="form-row">
+                <label>سبب التعديل <span style="color:var(--danger);">*</span></label>
+                <select id="editInvoiceReason" style="width:100%; padding:12px 15px; border:2px solid #e8e8e8; border-radius:12px; font-size:15px; font-family:'Cairo',sans-serif;">
+                    <option value="">-- اختر السبب --</option>
+                    <option value="ارجاع">🔄 إرجاع منتج</option>
+                    <option value="اضافة">➕ إضافة منتج</option>
+                    <option value="تنزيل">⬇️ تنزيل منتج</option>
+                    <option value="تعديل كمية">📦 تعديل كمية</option>
+                    <option value="تعديل خصم">💰 تعديل خصم / ديليفري</option>
+                    <option value="اخرى">📝 أخرى</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>ملاحظات إضافية (اختياري)</label>
+                <input type="text" id="editInvoiceNote" placeholder="مثال: العميل طلب إرجاع البطاطس...">
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-gry" onclick="closeEditInvoiceModal()">إلغاء</button>
+                <button class="btn btn-main" onclick="saveInvoiceEdit()"><i class="fas fa-save"></i> حفظ التعديلات</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product to Invoice Modal -->
+    <div class="modal-bg" id="addProdToInvModal">
+        <div class="modal-box" style="max-width:500px;">
+            <button class="modal-close" onclick="closeAddProdToInvModal()">&times;</button>
+            <h2>إضافة منتج للفاتورة</h2>
+            <div style="position:relative; margin-bottom:15px;">
+                <i class="fas fa-search" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#aaa;"></i>
+                <input type="text" id="addProdSearch" placeholder="ابحث عن منتج..." 
+                    style="width:100%;padding:10px 15px 10px 40px;border:2px solid #e8e8e8;border-radius:12px;font-family:'Cairo',sans-serif;font-size:14px;"
+                    oninput="filterAddProdSearch()">
+            </div>
+            <div id="addProdResults" style="max-height:300px; overflow-y:auto;">
+                <div class="empty" style="padding:20px;"><i class="fas fa-search" style="font-size:30px;color:#eee;"></i><p>ابحث عن منتج لإضافته</p></div>
             </div>
         </div>
     </div>
@@ -746,7 +842,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, deleteDoc, addDoc, setDoc, serverTimestamp, query, orderBy, limit, runTransaction, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, deleteDoc, addDoc, setDoc, serverTimestamp, query, orderBy, limit, runTransaction, where, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const app = initializeApp({
             apiKey: "AIzaSyDf_FZ5dDhJCYag9EpEblgylTrxber7oks",
@@ -768,8 +864,8 @@
         let cartPaymentMethod = 'cash';
         let isMonitorOnly = false; // true = can view but cannot sell
 
-        const DEFAULT_PERMS = { pos: true, products: true, invoices: true, reports: true, users: false, settings: false, change_password: true, monitor_only: false, print_invoices: true, delete_invoices: false, print_reports: true };
-        const PERM_LABELS = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين', settings: 'الإعدادات', change_password: 'تغيير كلمة السر', monitor_only: 'متابعة فقط (بدون بيع)', print_invoices: 'طباعة الفواتير', delete_invoices: 'حذف الفواتير', print_reports: 'طباعة التقارير' };
+        const DEFAULT_PERMS = { pos: true, products: true, invoices: true, reports: true, users: false, settings: false, change_password: true, monitor_only: false, print_invoices: true, delete_invoices: false, print_reports: true, edit_invoices: false };
+        const PERM_LABELS = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين', settings: 'الإعدادات', change_password: 'تغيير كلمة السر', monitor_only: 'متابعة فقط (بدون بيع)', print_invoices: 'طباعة الفواتير', delete_invoices: 'حذف الفواتير', print_reports: 'طباعة التقارير', edit_invoices: 'تعديل الفواتير' };
         const CAT_ICONS = {
             'تشكن': { icon: 'fa-drumstick-bite', class: 'cat-chicken' },
             'برجر': { icon: 'fa-hamburger', class: 'cat-burger' },
@@ -1127,7 +1223,7 @@
             if (sec === 'invoices') await loadInvoicesTable();
             if (sec === 'reports') await loadReports();
             if (sec === 'users') { await loadUsersTable(); await loadLoginLog(); }
-            document.getElementById('statsBar').style.display = sec === 'pos' ? 'grid' : 'none';
+            document.getElementById('statsBar').style.display = 'none';
         };
 
         window.switchUserTab = (tab) => {
@@ -1568,7 +1664,201 @@
             modal.classList.add('show');
         }
 
-        window.printInvoiceSingle = async () => {
+        // ========== EDIT INVOICE FUNCTIONS ==========
+let currentEditInvoice = null;
+let currentEditItems = [];
+
+window.openEditInvoiceModal = async (id) => {
+    const userPerms = userData?.permissions || DEFAULT_PERMS;
+    if (!isAdmin && !userPerms.edit_invoices) { alert('ليس لديك صلاحية تعديل الفواتير'); return; }
+
+    const d = await getDoc(doc(db, "invoices", id));
+    if (!d.exists()) { alert('الفاتورة غير موجودة'); return; }
+
+    currentEditInvoice = { id: d.id, ...d.data() };
+    currentEditItems = JSON.parse(JSON.stringify(currentEditInvoice.items || []));
+
+    document.getElementById('editInvoiceId').value = d.id;
+    document.getElementById('editInvoiceNum').value = '#' + (currentEditInvoice.invoiceNumber || d.id.slice(-6));
+    document.getElementById('editInvoiceDate').value = currentEditInvoice.createdAt ? new Date(currentEditInvoice.createdAt.toDate()).toLocaleString('ar-EG') : '-';
+    document.getElementById('editInvoiceDiscount').value = currentEditInvoice.discountPercent || 0;
+    document.getElementById('editInvoiceDelivery').value = currentEditInvoice.deliveryFee || 0;
+    document.getElementById('editInvoiceReason').value = '';
+    document.getElementById('editInvoiceNote').value = '';
+
+    renderEditInvoiceItems();
+    recalcEditInvoice();
+    document.getElementById('editInvoiceModal').classList.add('show');
+};
+
+window.closeEditInvoiceModal = () => {
+    document.getElementById('editInvoiceModal').classList.remove('show');
+    currentEditInvoice = null;
+    currentEditItems = [];
+};
+
+function renderEditInvoiceItems() {
+    const tbody = document.getElementById('editInvoiceItemsBody');
+    if (currentEditItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty"><i class="fas fa-box-open"></i><p>لا توجد عناصر</p></td></tr>';
+        return;
+    }
+    let html = '';
+    currentEditItems.forEach((item, idx) => {
+        const note = item.note || '';
+        html += `<tr>
+            <td><strong>${item.name}</strong></td>
+            <td>${item.price} ج.م</td>
+            <td>
+                <div class="cart-qty" style="margin:0;">
+                    <button onclick="changeEditItemQty(${idx}, -1)">−</button>
+                    <span>${item.qty}</span>
+                    <button onclick="changeEditItemQty(${idx}, 1)">+</button>
+                </div>
+            </td>
+            <td style="font-weight:800;">${item.price * item.qty} ج.م</td>
+            <td style="font-size:12px;color:#888;">${note ? '<i class="fas fa-sticky-note" style="color:var(--warning);"></i> ' + note : '-'}</td>
+            <td><button class="btn btn-red" style="padding:4px 10px;font-size:12px;" onclick="removeEditItem(${idx})" title="حذف"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
+}
+
+window.changeEditItemQty = (idx, delta) => {
+    if (!currentEditItems[idx]) return;
+    currentEditItems[idx].qty += delta;
+    if (currentEditItems[idx].qty <= 0) {
+        if (confirm('الكمية صارت صفر. هل تريد حذف المنتج من الفاتورة؟')) {
+            currentEditItems.splice(idx, 1);
+        } else {
+            currentEditItems[idx].qty = 1;
+        }
+    }
+    renderEditInvoiceItems();
+    recalcEditInvoice();
+};
+
+window.removeEditItem = (idx) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المنتج من الفاتورة؟')) return;
+    currentEditItems.splice(idx, 1);
+    renderEditInvoiceItems();
+    recalcEditInvoice();
+};
+
+window.recalcEditInvoice = () => {
+    const subTotal = currentEditItems.reduce((s, i) => s + (i.price * i.qty), 0);
+    const discountPercent = parseFloat(document.getElementById('editInvoiceDiscount').value) || 0;
+    const discountAmount = Math.round((subTotal * discountPercent) / 100);
+    const deliveryFee = parseFloat(document.getElementById('editInvoiceDelivery').value) || 0;
+    const total = Math.max(0, subTotal + deliveryFee - discountAmount);
+
+    document.getElementById('editInvoiceSubTotal').textContent = subTotal.toLocaleString('ar-EG') + ' ج.م';
+    document.getElementById('editInvoiceDiscountAmt').textContent = discountAmount.toLocaleString('ar-EG') + ' ج.م';
+    document.getElementById('editInvoiceTotal').textContent = total.toLocaleString('ar-EG') + ' ج.م';
+};
+
+window.openAddProductToInvoice = () => {
+    document.getElementById('addProdToInvModal').classList.add('show');
+    document.getElementById('addProdSearch').value = '';
+    document.getElementById('addProdResults').innerHTML = '<div class="empty" style="padding:20px;"><i class="fas fa-search" style="font-size:30px;color:#eee;"></i><p>ابحث عن منتج لإضافته</p></div>';
+    document.getElementById('addProdSearch').focus();
+};
+
+window.closeAddProdToInvModal = () => {
+    document.getElementById('addProdToInvModal').classList.remove('show');
+};
+
+window.filterAddProdSearch = () => {
+    const q = document.getElementById('addProdSearch').value.trim().toLowerCase();
+    const box = document.getElementById('addProdResults');
+    if (!q) {
+        box.innerHTML = '<div class="empty" style="padding:20px;"><i class="fas fa-search" style="font-size:30px;color:#eee;"></i><p>ابحث عن منتج لإضافته</p></div>';
+        return;
+    }
+    const filtered = allProducts.filter(p => {
+        return (p.name || '').toLowerCase().includes(q) || (p.code || '').toLowerCase().includes(q);
+    });
+    if (filtered.length === 0) {
+        box.innerHTML = '<div class="empty" style="padding:20px;"><i class="fas fa-times-circle" style="font-size:30px;color:#eee;"></i><p>لا توجد نتائج</p></div>';
+        return;
+    }
+    let html = '';
+    filtered.forEach(p => {
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #f0f0f0;cursor:pointer;" onclick="addProductToCurrentEdit('${p.id}')" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+            <div><strong>${p.name}</strong><div style="font-size:12px;color:#888;">${p.code || ''} - ${p.price} ج.م</div></div>
+            <button class="btn btn-main" style="padding:4px 10px;font-size:12px;"><i class="fas fa-plus"></i> إضافة</button>
+        </div>`;
+    });
+    box.innerHTML = html;
+};
+
+window.addProductToCurrentEdit = (pid) => {
+    const p = allProducts.find(x => x.id === pid);
+    if (!p) return;
+    const existing = currentEditItems.find(x => x.name === p.name && x.price === p.price);
+    if (existing) {
+        existing.qty++;
+    } else {
+        currentEditItems.push({ name: p.name, price: p.price, qty: 1, total: p.price, note: '' });
+    }
+    renderEditInvoiceItems();
+    recalcEditInvoice();
+    closeAddProdToInvModal();
+};
+
+window.saveInvoiceEdit = async () => {
+    if (!currentEditInvoice) return;
+    const reason = document.getElementById('editInvoiceReason').value;
+    if (!reason) { alert('اختر سبب التعديل'); document.getElementById('editInvoiceReason').focus(); return; }
+
+    const subTotal = currentEditItems.reduce((s, i) => s + (i.price * i.qty), 0);
+    const discountPercent = parseFloat(document.getElementById('editInvoiceDiscount').value) || 0;
+    const discountAmount = Math.round((subTotal * discountPercent) / 100);
+    const deliveryFee = parseFloat(document.getElementById('editInvoiceDelivery').value) || 0;
+    const total = Math.max(0, subTotal + deliveryFee - discountAmount);
+    const itemCount = currentEditItems.reduce((s, i) => s + i.qty, 0);
+    const noteText = document.getElementById('editInvoiceNote').value.trim();
+
+    const historyEntry = {
+        editedAt: new Date().toISOString(),
+        editedBy: currentUser.uid,
+        editedByName: userData?.fullName || currentUser.email,
+        reason: reason,
+        note: noteText,
+        oldTotal: currentEditInvoice.total || 0,
+        newTotal: total,
+        oldItemsCount: (currentEditInvoice.items || []).reduce((s, i) => s + (i.qty || 1), 0),
+        newItemsCount: itemCount
+    };
+
+    const editHistory = currentEditInvoice.editHistory || [];
+    editHistory.push(historyEntry);
+
+    try {
+        await updateDoc(doc(db, "invoices", currentEditInvoice.id), {
+            items: currentEditItems,
+            subTotal: subTotal,
+            discountPercent: discountPercent,
+            discountAmount: discountAmount,
+            deliveryFee: deliveryFee,
+            total: total,
+            itemCount: itemCount,
+            editHistory: editHistory,
+            lastEditedAt: serverTimestamp(),
+            lastEditedBy: currentUser.uid
+        });
+        alert('تم تعديل الفاتورة بنجاح\nالسبب: ' + reason + (noteText ? '\nملاحظة: ' + noteText : ''));
+        closeEditInvoiceModal();
+        loadInvoicesTable();
+        loadStats();
+    } catch (e) {
+        alert('خطأ في الحفظ: ' + e.message);
+    }
+};
+
+// ========== END EDIT INVOICE FUNCTIONS ==========
+
+window.printInvoiceSingle = async () => {
             const invId = document.querySelector('.invoice-print-wrap')?.id;
             if (invId) {
                 // Mark as printed in DB
@@ -1787,6 +2077,10 @@
                     const payLabels = { cash: 'كاش', visa: 'فيزا', delivery: 'ديليفري' };
                     const payTag = inv.paymentMethod === 'cash' ? 'tag-grn' : inv.paymentMethod === 'visa' ? 'tag-blu' : 'tag-ylw';
                     let viewBtn = `<button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;" title="عرض"><i class="fas fa-eye"></i></button>`;
+                    let editBtn = '';
+                    if (isAdmin || userPerms.edit_invoices) {
+                        editBtn = ` <button class="btn btn-warn" onclick="openEditInvoiceModal('${d.id}')" style="padding:5px 10px;" title="تعديل"><i class="fas fa-edit"></i></button>`;
+                    }
                     let printBtn = '';
                     let deleteBtn = '';
                     const userPerms = userData?.permissions || DEFAULT_PERMS;
@@ -1796,7 +2090,7 @@
                     if (isAdmin || userPerms.delete_invoices) {
                         deleteBtn = ` <button class="btn btn-red" onclick="deleteInvoice('${d.id}')" style="padding:5px 10px;" title="حذف"><i class="fas fa-trash"></i></button>`;
                     }
-                    html += `<tr><td><strong>#${invNum}</strong></td><td>${date}</td><td>${inv.itemCount || 0} عنصر</td><td style="color:var(--primary);font-weight:800;">${inv.subTotal || inv.total || 0} ج.م</td><td>${inv.deliveryFee || 0} ج.م</td><td style="color:var(--success);">${inv.discountAmount || 0} ج.م</td><td style="font-weight:800;">${inv.total || 0} ج.م</td><td><span class="tag ${payTag}">${payLabels[inv.paymentMethod] || inv.paymentMethod}</span></td><td>${inv.cashierName || '-'}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap;">${viewBtn}${printBtn}${deleteBtn}</div></td></tr>`;
+                    html += `<tr><td><strong>#${invNum}</strong></td><td>${date}</td><td>${inv.itemCount || 0} عنصر</td><td style="color:var(--primary);font-weight:800;">${inv.subTotal || inv.total || 0} ج.م</td><td>${inv.deliveryFee || 0} ج.م</td><td style="color:var(--success);">${inv.discountAmount || 0} ج.م</td><td style="font-weight:800;">${inv.total || 0} ج.م</td><td><span class="tag ${payTag}">${payLabels[inv.paymentMethod] || inv.paymentMethod}</span></td><td>${inv.cashierName || '-'}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap;">${viewBtn}${editBtn}${printBtn}${deleteBtn}</div></td></tr>`;
                 });
                 tbody.innerHTML = html;
             } catch (e) { tbody.innerHTML = '<tr><td colspan="10" class="empty">خطأ</td></tr>'; }
@@ -1905,6 +2199,11 @@
                     html += `<tr style="background:#f8f9fa;font-weight:800;border-top:2px solid var(--dark);"><td>الإجمالي</td><td>${filteredCount}</td><td style="color:var(--primary);">${filteredTotal.toLocaleString('ar-EG')} ج.م</td><td>${filteredCount > 0 ? Math.round(filteredTotal / filteredCount).toLocaleString('ar-EG') : 0} ج.م</td></tr>`;
                     dailyBody.innerHTML = html;
                 }
+                // Update report page stats
+                document.getElementById('repStSales').textContent = todaySales;
+                document.getElementById('repStRevenue').textContent = todayRevenue.toLocaleString('ar-EG') + ' ج.م';
+                document.getElementById('repStProducts').textContent = allProducts.length;
+                document.getElementById('repStInvoices').textContent = invSnap.size;
             } catch (e) { console.error(e); }
         }
 
@@ -2219,6 +2518,10 @@
                 });
                 document.getElementById('stSales').textContent = todaySales;
                 document.getElementById('stRevenue').textContent = todayRevenue.toLocaleString('ar-EG') + ' ج.م';
+                document.getElementById('repStSales').textContent = todaySales;
+                document.getElementById('repStRevenue').textContent = todayRevenue.toLocaleString('ar-EG') + ' ج.م';
+                document.getElementById('repStProducts').textContent = prodSnap.size;
+                document.getElementById('repStInvoices').textContent = invSnap.size;
             } catch (e) { }
         }
 
