@@ -927,11 +927,20 @@
                 const storedSessionId = localStorage.getItem('baron_session_id');
                 const isSameSession = storedSessionId && storedSessionId === userData.currentSessionId;
 
-                // Allow if: same session (F5/refresh) OR lastSeen is old (> 3 min, previous session died)
-                // Block if: different session AND lastSeen is recent (< 3 min, someone else is active)
-                if (userData.role !== 'admin' && !isSameSession && diffMin <= 3 && userData.forceLogout !== true) {
+                // FIXED: Grace period 10 min for refresh, and only block if session is ACTIVE (not null)
+                // If currentSessionId is null, user logged out properly → allow login
+                // If isSameSession → it's a refresh → allow
+                // If diffMin > 10 → old session died → allow
+                const sessionActive = userData.currentSessionId !== null && userData.currentSessionId !== undefined && userData.currentSessionId !== '';
+                const shouldBlock = userData.role !== 'admin' 
+                    && !isSameSession 
+                    && sessionActive 
+                    && diffMin <= 10 
+                    && userData.forceLogout !== true;
+
+                if (shouldBlock) {
                     await signOut(auth);
-                    alert('هذا الحساب مسجل دخول على جهاز آخر. يرجى الانتظار 3 دقائق وإعادة المحاولة.');
+                    alert('هذا الحساب مسجل دخول على جهاز آخر. يرجى الانتظار 10 دقائق وإعادة المحاولة.');
                     window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
                     return;
                 }
@@ -1101,12 +1110,12 @@
             window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
         };
 
-        // Handle browser close/refresh to logout user immediately
+        // Handle browser close/refresh - mark session as ended
         window.addEventListener('beforeunload', () => {
             if (currentUser) {
                 setDoc(doc(db, "users", currentUser.uid), { 
-                    isLoggedIn: false, 
-                    lastSeen: serverTimestamp() 
+                    isLoggedIn: false,
+                    currentSessionId: null
                 }, { merge: true }).catch(() => {});
             }
         });
@@ -1114,13 +1123,15 @@
         window.addEventListener('pagehide', () => {
             if (currentUser) {
                 setDoc(doc(db, "users", currentUser.uid), { 
-                    isLoggedIn: false 
+                    isLoggedIn: false,
+                    currentSessionId: null
                 }, { merge: true }).catch(() => {});
             }
         });
 
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden' && currentUser) {
+            // Only update lastSeen when tab becomes visible (user is active)
+            if (document.visibilityState === 'visible' && currentUser) {
                 setDoc(doc(db, "users", currentUser.uid), { 
                     lastSeen: serverTimestamp() 
                 }, { merge: true }).catch(() => {});
@@ -1166,18 +1177,46 @@
                 const firestoreSessionId = data.currentSessionId || null;
                 const isSameSession = storedSessionId && storedSessionId === firestoreSessionId;
 
-                // Check force logout
+                // Check force logout first (highest priority)
                 if (data.forceLogout === true) { 
                     alert('تم إغلاق جلستك من قبل الإدارة.'); 
                     await forceLogout(); 
                     return;
                 }
 
-                // PERFECT: If currentSessionId in Firestore changed → another device logged in
-                if (!isSameSession && firestoreSessionId !== null) {
-                    alert('تم فتح حسابك على جهاز آخر. سيتم تسجيل خروجك.');
+                // Check account disabled
+                if (data.status === 'disabled') {
+                    alert('حسابك معطل من قبل الإدارة.');
                     await forceLogout();
                     return;
+                }
+
+                // Check expiry
+                if (data.expiresAt && data.expiresAt.toDate) {
+                    const now = new Date();
+                    const expiry = data.expiresAt.toDate();
+                    if (now > expiry) {
+                        alert('انتهت صلاحية حسابك. يرجى التواصل مع الإدارة لتجديد الاشتراك.');
+                        await forceLogout();
+                        return;
+                    }
+                }
+
+                // Session conflict check: only if another device has a DIFFERENT active session
+                if (!isSameSession && firestoreSessionId !== null && firestoreSessionId !== '') {
+                    // Give 5 second grace for Firestore sync delays
+                    await new Promise(r => setTimeout(r, 5000));
+                    const ud2 = await getDoc(doc(db, "users", currentUser.uid));
+                    if (!ud2.exists()) return;
+                    const data2 = ud2.data();
+                    const firestoreSessionId2 = data2.currentSessionId || null;
+                    const isSameSession2 = storedSessionId && storedSessionId === firestoreSessionId2;
+
+                    if (!isSameSession2 && firestoreSessionId2 !== null && firestoreSessionId2 !== '') {
+                        alert('تم فتح حسابك على جهاز آخر. سيتم تسجيل خروجك.');
+                        await forceLogout();
+                        return;
+                    }
                 }
 
                 // Check expiry - log out immediately if expired
@@ -2122,6 +2161,7 @@ window.printInvoiceSingle = async () => {
                     const date = inv.createdAt ? new Date(inv.createdAt.toDate()).toLocaleString('ar-EG') : '-';
                     const payLabels = { cash: 'كاش', visa: 'فيزا', delivery: 'ديليفري' };
                     const payTag = inv.paymentMethod === 'cash' ? 'tag-grn' : inv.paymentMethod === 'visa' ? 'tag-blu' : 'tag-ylw';
+                    const userPerms = userData?.permissions || DEFAULT_PERMS;
                     let viewBtn = `<button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;" title="عرض"><i class="fas fa-eye"></i></button>`;
                     let editBtn = '';
                     if (isAdmin || userPerms.edit_invoices) {
@@ -2129,7 +2169,6 @@ window.printInvoiceSingle = async () => {
                     }
                     let printBtn = '';
                     let deleteBtn = '';
-                    const userPerms = userData?.permissions || DEFAULT_PERMS;
                     if (isAdmin || userPerms.print_invoices) {
                         printBtn = ` <button class="btn btn-blu" onclick="printInvoiceFromTable('${d.id}')" style="padding:5px 10px;" title="طباعة"><i class="fas fa-print"></i></button>`;
                     }
@@ -2245,11 +2284,19 @@ window.printInvoiceSingle = async () => {
                     html += `<tr style="background:#f8f9fa;font-weight:800;border-top:2px solid var(--dark);"><td>الإجمالي</td><td>${filteredCount}</td><td style="color:var(--primary);">${filteredTotal.toLocaleString('ar-EG')} ج.م</td><td>${filteredCount > 0 ? Math.round(filteredTotal / filteredCount).toLocaleString('ar-EG') : 0} ج.م</td></tr>`;
                     dailyBody.innerHTML = html;
                 }
-                // Update report page stats
-                document.getElementById('repStSales').textContent = todaySales;
-                document.getElementById('repStRevenue').textContent = todayRevenue.toLocaleString('ar-EG') + ' ج.م';
-                document.getElementById('repStProducts').textContent = allProducts.length;
-                document.getElementById('repStInvoices').textContent = invSnap.size;
+                // Update report page stats - calculate inside the function
+                let repTodaySales = 0, repTodayRevenue = 0;
+                snap.forEach(d => {
+                    const inv = d.data();
+                    if (inv.createdAt && inv.createdAt.toDate) {
+                        if (inv.createdAt.toDate() >= todayStart) { repTodaySales++; repTodayRevenue += inv.total || 0; }
+                    }
+                });
+                document.getElementById('repStSales').textContent = repTodaySales;
+                document.getElementById('repStRevenue').textContent = repTodayRevenue.toLocaleString('ar-EG') + ' ج.م';
+                const prodSnap2 = await getDocs(collection(db, "products"));
+                document.getElementById('repStProducts').textContent = prodSnap2.size;
+                document.getElementById('repStInvoices').textContent = snap.size;
             } catch (e) { console.error(e); }
         }
 
@@ -2287,12 +2334,29 @@ window.printInvoiceSingle = async () => {
             if (pass.length < 6) { alert('كلمة المرور ضعيفة'); return; }
             if (role !== 'admin' && (!days || days < 1)) { alert('حدد عدد أيام'); return; }
             try {
-                const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                // PROPER FIX: Use secondary Firebase app to create user without affecting admin session
+                const secondaryApp = initializeApp({
+                    apiKey: "AIzaSyDf_FZ5dDhJCYag9EpEblgylTrxber7oks",
+                    authDomain: "cashier-52332.firebaseapp.com",
+                    projectId: "cashier-52332",
+                    storageBucket: "cashier-52332.firebasestorage.app",
+                    messagingSenderId: "708122460779",
+                    appId: "1:708122460779:web:5c0fb2f36488aa6ae3272e",
+                    measurementId: "G-8BLM2L0LN5"
+                }, 'Secondary_' + Date.now());
+
+                const secondaryAuth = getAuth(secondaryApp);
+                const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
+                const newUid = cred.user.uid;
+
+                await signOut(secondaryAuth);
+                await secondaryApp.delete();
+
                 const perms = role === 'admin' ? { pos: true, products: true, invoices: true, reports: true, users: true, settings: true, change_password: true, monitor_only: false } : { ...DEFAULT_PERMS };
                 const udata = { email, fullName: name, role, status: "active", permissions: perms, isLoggedIn: false, createdAt: serverTimestamp(), lastLogin: serverTimestamp(), createdBy: currentUser.uid };
                 if (role !== 'admin') { const exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000); udata.daysActivated = days; udata.expiresAt = exp; }
-                await setDoc(doc(db, "users", cred.user.uid), udata);
-                alert('تم إنشاء المستخدم');
+                await setDoc(doc(db, "users", newUid), udata);
+                alert('تم إنشاء المستخدم بنجاح!');
                 closeUserModal(); loadUsersTable(); loadStats();
             } catch (err) { alert(err.code === 'auth/email-already-in-use' ? 'البريد مستخدم' : err.message); }
         };
@@ -2350,9 +2414,11 @@ window.printInvoiceSingle = async () => {
 
         window.togglePerm = (el) => {
             const cb = el.querySelector('input[type="checkbox"]');
-            cb.checked = !cb.checked;
+            // Only toggle if we clicked the div, not the checkbox itself
+            if (event && event.target !== cb) {
+                cb.checked = !cb.checked;
+            }
             el.classList.toggle('active', cb.checked);
-            console.log('Permission toggled:', cb.value, cb.checked); // Debug
         };
 
         window.updateUser = async () => {
@@ -2866,13 +2932,19 @@ window.printInvoiceSingle = async () => {
                     q = query(collection(db, "messages"), orderBy("createdAt", "desc"), limit(50));
                 } else {
                     const uid = currentUser.uid;
-                    q = query(collection(db, "messages"), where("target", "==", "all"), orderBy("createdAt", "desc"), limit(30));
+                    // Get messages sent to ALL, OR messages specifically sent to this user
+                    q = query(collection(db, "messages"), 
+                        where("target", "in", ["all", "user"]), 
+                        orderBy("createdAt", "desc"), 
+                        limit(50));
                 }
                 const snap = await getDocs(q);
                 if (snap.empty) { box.innerHTML = '<div class="empty" style="padding:30px;"><i class="fas fa-envelope-open" style="font-size:40px;color:#eee;"></i><p>لا توجد رسائل</p></div>'; return; }
                 let html = '';
                 snap.forEach(d => {
                     const m = d.data();
+                    // Filter: if message is targeted to a specific user, only show to that user
+                    if (m.target === 'user' && m.targetUserId !== currentUser.uid) return;
                     const date = m.createdAt ? new Date(m.createdAt.toDate()).toLocaleString('ar-EG') : '-';
                     const isRead = m.readBy && m.readBy[currentUser.uid];
                     const replyCount = m.replies ? m.replies.length : 0;
@@ -3048,11 +3120,12 @@ window.printInvoiceSingle = async () => {
             if (currentSessionId) {
                 try { await setDoc(doc(db, "login_log", currentSessionId), { type: 'logout', logoutAt: serverTimestamp() }, { merge: true }); } catch (e) { console.error(e); }
             }
-            // CRITICAL: Clear currentSessionId from Firestore so other devices can login
+            // CRITICAL: Clear currentSessionId and set lastSeen to past time
+            const pastTime = new Date(Date.now() - 60000); // 1 minute ago
             if (currentUser) await setDoc(doc(db, "users", currentUser.uid), { 
                 forceLogout: false, 
                 currentSessionId: null,
-                lastSeen: serverTimestamp()
+                lastSeen: pastTime
             }, { merge: true });
             localStorage.removeItem('baron_session_id');
             if (maintenanceUnsub) maintenanceUnsub();
@@ -3222,220 +3295,6 @@ window.printInvoiceSingle = async () => {
             doc.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: 58mm auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; font-weight: 900; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:58mm;font-weight:900;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}
 
     <!-- Messages Modal -->
-    <div class="modal-bg" id="messagesModal">
-        <div class="modal-box wide" style="max-width:700px;">
-            <button class="modal-close" onclick="closeMessagesModal()">&times;</button>
-            <h2><i class="fas fa-envelope" style="color:var(--primary);"></i> <span id="msgModalTitle">الرسائل</span></h2>
-
-            <!-- Admin Send Panel -->
-            <div id="adminSendPanel" class="hidden" style="margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid #f0f0f0;">
-                <h3 style="font-size:15px;margin-bottom:12px;"><i class="fas fa-paper-plane" style="color:var(--primary);"></i> إرسال رسالة جديدة</h3>
-                <div class="msg-to-select">
-                    <button class="msg-to-btn active" id="toAllBtn" onclick="setMsgTarget('all')">📢 الكل</button>
-                    <button class="msg-to-btn" id="toUserBtn" onclick="setMsgTarget('user')">👤 مستخدم محدد</button>
-                </div>
-                <div class="form-row hidden" id="userSelectRow">
-                    <label>اختر المستخدم</label>
-                    <select id="msgTargetUser" style="width:100%;padding:10px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';">
-                        <option value="">-- اختر --</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <label>نص الرسالة</label>
-                    <textarea id="msgContent" rows="3" placeholder="اكتب رسالتك هنا..." style="width:100%;padding:10px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';font-size:14px;resize:vertical;"></textarea>
-                </div>
-                <div style="display:flex;gap:8px;justify-content:flex-end;">
-                    <button class="btn btn-gry" onclick="clearMsgForm()">إلغاء</button>
-                    <button class="btn btn-main" onclick="sendMessage()"><i class="fas fa-paper-plane"></i> إرسال</button>
-                </div>
-            </div>
-
-            <!-- Messages List -->
-            <div id="msgListPanel">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                    <h3 style="font-size:15px;"><i class="fas fa-inbox" style="color:var(--info);"></i> <span id="msgListTitle">الرسائل الواردة</span></h3>
-                    <button class="btn btn-sec" onclick="loadMessages()" style="padding:5px 12px;font-size:12px;"><i class="fas fa-sync-alt"></i> تحديث</button>
-                </div>
-                <div id="messagesList" style="max-height:400px;overflow-y:auto;">
-                    <div class="empty" style="padding:30px;"><i class="fas fa-envelope-open" style="font-size:40px;color:#eee;"></i><p>لا توجد رسائل</p></div>
-                </div>
-            </div>
-
-            <!-- Message Detail + Replies -->
-            <div id="msgDetailPanel" class="hidden">
-                <button class="btn btn-gry" onclick="backToMsgList()" style="margin-bottom:15px;"><i class="fas fa-arrow-right"></i> رجوع للقائمة</button>
-                <div class="msg-detail-box" id="msgDetailBox"></div>
-                <div style="margin-bottom:10px;"><strong>الردود:</strong></div>
-                <div id="msgRepliesList" style="max-height:200px;overflow-y:auto;margin-bottom:15px;"></div>
-                <div style="display:flex;gap:8px;">
-                    <input type="text" id="msgReplyInput" placeholder="اكتب ردك..." style="flex:1;padding:10px 15px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';font-size:14px;" onkeydown="if(event.key==='Enter')sendReply()">
-                    <button class="btn btn-main" onclick="sendReply()"><i class="fas fa-reply"></i> رد</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pending Invoices Modal -->
-    <div class="modal-bg" id="pendingModal">
-        <div class="modal-box wide">
-            <button class="modal-close" onclick="closePendingModal()">&times;</button>
-            <h2><i class="fas fa-pause-circle" style="color:var(--warning);"></i> الفواتير المعلقة</h2>
-            <table>
-                <thead><tr><th>#</th><th>الوقت</th><th>العناصر</th><th>المجموع</th><th>الكاشير</th><th>إجراءات</th></tr></thead>
-                <tbody id="pendingBody"><tr><td colspan="6" class="empty"><div class="spin"></div></td></tr></tbody>
-            </table>
-        </div>
-    </div>
-
-</body></html>`);
-            doc.close();
-            setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => iframe.remove(), 3000); }, 600);
-        };
-
-</script>
-
-    <!-- Quick Note Modal -->
-    <div class="modal-bg" id="noteModal">
-        <div class="modal-box" style="max-width:380px;">
-            <button class="modal-close" onclick="closeNoteModal()">&times;</button>
-            <h2><i class="fas fa-sticky-note" style="color:var(--warning);"></i> ملاحظة المنتج</h2>
-            <div style="margin-bottom:15px;">
-                <label style="display:block;margin-bottom:8px;font-weight:700;font-size:14px;">اختر ملاحظة سريعة:</label>
-                <div id="quickNotesList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
-                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('بدون خس')">بدون خس</button>
-                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('بدون طماطم')">بدون طماطم</button>
-                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('بدون بصل')">بدون بصل</button>
-                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Spicy')">Spicy 🔥</button>
-                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Extra Sauce')">Extra Sauce</button>
-                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Well Done')">Well Done</button>
-                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Medium')">Medium</button>
-                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Extra Cheese')">Extra Cheese 🧀</button>
-                </div>
-            </div>
-            <div class="form-row">
-                <label>أو اكتب ملاحظة مخصصة:</label>
-                <textarea id="customNoteInput" rows="3" placeholder="اكتب هنا..." 
-                    style="width:100%;padding:10px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';font-size:14px;resize:vertical;"
-                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveNote();}"></textarea>
-                <div style="font-size:11px;color:#888;margin-top:4px;">اضغط Enter للسطر الجديد</div>
-            </div>
-            <div class="modal-foot">
-                <button class="btn btn-gry" onclick="closeNoteModal()">إلغاء</button>
-                <button class="btn btn-red" onclick="clearNote()" style="margin-right:auto;"><i class="fas fa-trash"></i> مسح</button>
-                <button class="btn btn-main" onclick="saveNote()">حفظ</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Printer Settings Modal -->
-    <div class="modal-bg" id="printerModal">
-        <div class="modal-box">
-            <button class="modal-close" onclick="closePrinterModal()">&times;</button>
-            <h2><i class="fas fa-print"></i> إعدادات الطابعة</h2>
-            <div class="form-row">
-                <div style="background:#e8f4fd; padding:12px 15px; border-radius:10px; color:#0c5460; font-size:13px; margin-bottom:15px;">
-                    <i class="fas fa-info-circle"></i> لازم يكون برنامج <strong>QZ Tray</strong> شغال على الجهاز. لو مش مثبّته، <a href="https://qz.io" target="_blank" style="color:var(--primary);">حمله من هنا</a>.
-                </div>
-            </div>
-            <div class="form-row">
-                <label>حالة الاتصال</label>
-                <div id="qzStatus" style="font-weight:700; color:#888;">غير متصل</div>
-            </div>
-            <div class="form-row">
-                <button class="btn btn-main" onclick="connectQZ()" id="btnConnectQZ"><i class="fas fa-plug"></i> توصيل QZ Tray</button>
-            </div>
-            <div class="form-row">
-                <label>اختر الطابعة</label>
-                <select id="printerSelect" disabled>
-                    <option value="">-- اضغط "توصيل" الأول --</option>
-                </select>
-            </div>
-            <div class="form-row">
-                <label>عدد النسخ الافتراضي</label>
-                <input type="number" id="printerCopies" value="2" min="1" max="5" style="width:80px;">
-            </div>
-            <div class="form-row">
-                <label>عرض الورق (مم)</label>
-                <select id="paperWidth">
-                    <option value="58">58 مم (حرارية صغيرة)</option>
-                    <option value="80">80 مم (حرارية كبيرة)</option>
-                    <option value="A4">A4 (عادية)</option>
-                </select>
-            </div>
-            <div class="modal-foot">
-                <button class="btn btn-gry" onclick="closePrinterModal()">إلغاء</button>
-                <button class="btn btn-main" onclick="savePrinterSettings()">حفظ الإعدادات</button>
-            </div>
-        </div>
-    </div>
-
-
-
-    <!-- Messages Modal -->
-    <div class="modal-bg" id="messagesModal">
-        <div class="modal-box wide" style="max-width:700px;">
-            <button class="modal-close" onclick="closeMessagesModal()">&times;</button>
-            <h2><i class="fas fa-envelope" style="color:var(--primary);"></i> <span id="msgModalTitle">الرسائل</span></h2>
-
-            <!-- Admin Send Panel -->
-            <div id="adminSendPanel" class="hidden" style="margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid #f0f0f0;">
-                <h3 style="font-size:15px;margin-bottom:12px;"><i class="fas fa-paper-plane" style="color:var(--primary);"></i> إرسال رسالة جديدة</h3>
-                <div class="msg-to-select">
-                    <button class="msg-to-btn active" id="toAllBtn" onclick="setMsgTarget('all')">📢 الكل</button>
-                    <button class="msg-to-btn" id="toUserBtn" onclick="setMsgTarget('user')">👤 مستخدم محدد</button>
-                </div>
-                <div class="form-row hidden" id="userSelectRow">
-                    <label>اختر المستخدم</label>
-                    <select id="msgTargetUser" style="width:100%;padding:10px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';">
-                        <option value="">-- اختر --</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <label>نص الرسالة</label>
-                    <textarea id="msgContent" rows="3" placeholder="اكتب رسالتك هنا..." style="width:100%;padding:10px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';font-size:14px;resize:vertical;"></textarea>
-                </div>
-                <div style="display:flex;gap:8px;justify-content:flex-end;">
-                    <button class="btn btn-gry" onclick="clearMsgForm()">إلغاء</button>
-                    <button class="btn btn-main" onclick="sendMessage()"><i class="fas fa-paper-plane"></i> إرسال</button>
-                </div>
-            </div>
-
-            <!-- Messages List -->
-            <div id="msgListPanel">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                    <h3 style="font-size:15px;"><i class="fas fa-inbox" style="color:var(--info);"></i> <span id="msgListTitle">الرسائل الواردة</span></h3>
-                    <button class="btn btn-sec" onclick="loadMessages()" style="padding:5px 12px;font-size:12px;"><i class="fas fa-sync-alt"></i> تحديث</button>
-                </div>
-                <div id="messagesList" style="max-height:400px;overflow-y:auto;">
-                    <div class="empty" style="padding:30px;"><i class="fas fa-envelope-open" style="font-size:40px;color:#eee;"></i><p>لا توجد رسائل</p></div>
-                </div>
-            </div>
-
-            <!-- Message Detail + Replies -->
-            <div id="msgDetailPanel" class="hidden">
-                <button class="btn btn-gry" onclick="backToMsgList()" style="margin-bottom:15px;"><i class="fas fa-arrow-right"></i> رجوع للقائمة</button>
-                <div class="msg-detail-box" id="msgDetailBox"></div>
-                <div style="margin-bottom:10px;"><strong>الردود:</strong></div>
-                <div id="msgRepliesList" style="max-height:200px;overflow-y:auto;margin-bottom:15px;"></div>
-                <div style="display:flex;gap:8px;">
-                    <input type="text" id="msgReplyInput" placeholder="اكتب ردك..." style="flex:1;padding:10px 15px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';font-size:14px;" onkeydown="if(event.key==='Enter')sendReply()">
-                    <button class="btn btn-main" onclick="sendReply()"><i class="fas fa-reply"></i> رد</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pending Invoices Modal -->
-    <div class="modal-bg" id="pendingModal">
-        <div class="modal-box wide">
-            <button class="modal-close" onclick="closePendingModal()">&times;</button>
-            <h2><i class="fas fa-pause-circle" style="color:var(--warning);"></i> الفواتير المعلقة</h2>
-            <table>
-                <thead><tr><th>#</th><th>الوقت</th><th>العناصر</th><th>المجموع</th><th>الكاشير</th><th>إجراءات</th></tr></thead>
-                <tbody id="pendingBody"><tr><td colspan="6" class="empty"><div class="spin"></div></td></tr></tbody>
-            </table>
-        </div>
-    </div>
-
+    
 </body>
 </html>
