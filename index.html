@@ -352,34 +352,6 @@
         .admin-only-nav.show { display: flex; }
         .inv-select { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
         .bulk-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .msg-item { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: all 0.2s; border-radius: 10px; margin-bottom: 6px; }
-        .msg-item:hover { background: #f8f9fa; }
-        .msg-item.unread { background: #fff3cd; border-right: 3px solid var(--warning); }
-        .msg-item.read { background: #f8f9fa; border-right: 3px solid transparent; opacity: 0.8; }
-        .msg-item .msg-from { font-weight: 700; font-size: 13px; color: var(--dark); }
-        .msg-item .msg-time { font-size: 11px; color: #aaa; margin-top: 2px; }
-        .msg-item .msg-preview { font-size: 13px; color: #666; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .msg-item .msg-reply-count { font-size: 11px; color: var(--info); margin-top: 4px; }
-        .msg-detail-box { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
-        .msg-detail-box .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .msg-detail-box .msg-body { font-size: 15px; line-height: 1.6; color: #333; }
-        .reply-item { background: white; padding: 10px 15px; border-radius: 10px; margin-bottom: 8px; border-right: 3px solid var(--info); }
-        .reply-item .reply-from { font-weight: 700; font-size: 12px; color: var(--dark); }
-        .reply-item .reply-time { font-size: 11px; color: #aaa; }
-        .reply-item .reply-text { font-size: 13px; color: #555; margin-top: 4px; }
-        .msg-to-select { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-        .msg-to-btn { padding: 8px 16px; border-radius: 10px; border: 2px solid #e0e0e0; background: white; cursor: pointer; font-family: 'Cairo'; font-weight: 700; font-size: 13px; transition: all 0.2s; }
-        .msg-to-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .msg-to-btn:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
-        .msg-popup { position: fixed; top: 20px; left: 20px; z-index: 3000; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); padding: 20px; max-width: 400px; min-width: 320px; animation: slideInLeft 0.4s ease; direction: rtl; }
-        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
-        .msg-popup .msg-popup-title { font-weight: 800; font-size: 16px; margin-bottom: 10px; color: var(--dark); display: flex; align-items: center; gap: 8px; }
-        .msg-popup .msg-popup-body { font-size: 14px; color: #555; line-height: 1.5; margin-bottom: 12px; }
-        .msg-popup .msg-popup-from { font-size: 12px; color: #888; margin-bottom: 10px; }
-        .msg-popup .msg-popup-actions { display: flex; gap: 8px; }
-        .msg-popup .msg-popup-actions input { flex: 1; padding: 8px 12px; border: 2px solid #e8e8e8; border-radius: 10px; font-family: 'Cairo'; font-size: 13px; }
-        .msg-popup .msg-popup-actions input:focus { border-color: var(--primary); outline: none; }
-        .msg-popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 2999; }
         .cat-input-row { display: flex; gap: 8px; }
         .cat-input-row input { flex: 1; }
         .cat-input-row button { padding: 0 14px; border-radius: 10px; border: none; background: var(--primary); color: white; cursor: pointer; font-family: 'Cairo', sans-serif; font-weight: 700; }
@@ -408,7 +380,6 @@
             <li class="nav-item" onclick="navTo('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></li>
             <li class="nav-item admin-only-nav" id="navUsers" onclick="navTo('users')"><i class="fas fa-users-cog"></i><span>المستخدمين</span></li>
             <li class="nav-item" onclick="openPendingModal()"><i class="fas fa-pause-circle"></i><span>فواتير معلقة</span><span id="pendingBadge" style="background:var(--warning);color:white;padding:2px 8px;border-radius:10px;font-size:11px;margin-right:auto;display:none;">0</span></li>
-            <li class="nav-item" onclick="openMessagesModal()"><i class="fas fa-envelope"></i><span>الرسائل</span><span id="msgBadge" style="background:var(--danger);color:white;padding:2px 8px;border-radius:10px;font-size:11px;margin-right:auto;display:none;">0</span></li>
             <li class="nav-item" onclick="openPrinterModal()">
         </ul>
         <div class="sidebar-footer">
@@ -927,20 +898,11 @@
                 const storedSessionId = localStorage.getItem('baron_session_id');
                 const isSameSession = storedSessionId && storedSessionId === userData.currentSessionId;
 
-                // FIXED: Grace period 10 min for refresh, and only block if session is ACTIVE (not null)
-                // If currentSessionId is null, user logged out properly → allow login
-                // If isSameSession → it's a refresh → allow
-                // If diffMin > 10 → old session died → allow
-                const sessionActive = userData.currentSessionId !== null && userData.currentSessionId !== undefined && userData.currentSessionId !== '';
-                const shouldBlock = userData.role !== 'admin' 
-                    && !isSameSession 
-                    && sessionActive 
-                    && diffMin <= 10 
-                    && userData.forceLogout !== true;
-
-                if (shouldBlock) {
+                // Allow if: same session (F5/refresh) OR lastSeen is old (> 3 min, previous session died)
+                // Block if: different session AND lastSeen is recent (< 3 min, someone else is active)
+                if (userData.role !== 'admin' && !isSameSession && diffMin <= 3 && userData.forceLogout !== true) {
                     await signOut(auth);
-                    alert('هذا الحساب مسجل دخول على جهاز آخر. يرجى الانتظار 10 دقائق وإعادة المحاولة.');
+                    alert('هذا الحساب مسجل دخول على جهاز آخر. يرجى الانتظار 3 دقائق وإعادة المحاولة.');
                     window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
                     return;
                 }
@@ -997,7 +959,6 @@
             loadStats();
             loadCategories();
             listenPendingBadge();
-            listenForMessages();
         });
 
         async function recordLogin(uid) {
@@ -1110,12 +1071,12 @@
             window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
         };
 
-        // Handle browser close/refresh - mark session as ended
+        // Handle browser close/refresh to logout user immediately
         window.addEventListener('beforeunload', () => {
             if (currentUser) {
                 setDoc(doc(db, "users", currentUser.uid), { 
-                    isLoggedIn: false,
-                    currentSessionId: null
+                    isLoggedIn: false, 
+                    lastSeen: serverTimestamp() 
                 }, { merge: true }).catch(() => {});
             }
         });
@@ -1123,15 +1084,13 @@
         window.addEventListener('pagehide', () => {
             if (currentUser) {
                 setDoc(doc(db, "users", currentUser.uid), { 
-                    isLoggedIn: false,
-                    currentSessionId: null
+                    isLoggedIn: false 
                 }, { merge: true }).catch(() => {});
             }
         });
 
         document.addEventListener('visibilitychange', () => {
-            // Only update lastSeen when tab becomes visible (user is active)
-            if (document.visibilityState === 'visible' && currentUser) {
+            if (document.visibilityState === 'hidden' && currentUser) {
                 setDoc(doc(db, "users", currentUser.uid), { 
                     lastSeen: serverTimestamp() 
                 }, { merge: true }).catch(() => {});
@@ -1177,46 +1136,18 @@
                 const firestoreSessionId = data.currentSessionId || null;
                 const isSameSession = storedSessionId && storedSessionId === firestoreSessionId;
 
-                // Check force logout first (highest priority)
+                // Check force logout
                 if (data.forceLogout === true) { 
                     alert('تم إغلاق جلستك من قبل الإدارة.'); 
                     await forceLogout(); 
                     return;
                 }
 
-                // Check account disabled
-                if (data.status === 'disabled') {
-                    alert('حسابك معطل من قبل الإدارة.');
+                // PERFECT: If currentSessionId in Firestore changed → another device logged in
+                if (!isSameSession && firestoreSessionId !== null) {
+                    alert('تم فتح حسابك على جهاز آخر. سيتم تسجيل خروجك.');
                     await forceLogout();
                     return;
-                }
-
-                // Check expiry
-                if (data.expiresAt && data.expiresAt.toDate) {
-                    const now = new Date();
-                    const expiry = data.expiresAt.toDate();
-                    if (now > expiry) {
-                        alert('انتهت صلاحية حسابك. يرجى التواصل مع الإدارة لتجديد الاشتراك.');
-                        await forceLogout();
-                        return;
-                    }
-                }
-
-                // Session conflict check: only if another device has a DIFFERENT active session
-                if (!isSameSession && firestoreSessionId !== null && firestoreSessionId !== '') {
-                    // Give 5 second grace for Firestore sync delays
-                    await new Promise(r => setTimeout(r, 5000));
-                    const ud2 = await getDoc(doc(db, "users", currentUser.uid));
-                    if (!ud2.exists()) return;
-                    const data2 = ud2.data();
-                    const firestoreSessionId2 = data2.currentSessionId || null;
-                    const isSameSession2 = storedSessionId && storedSessionId === firestoreSessionId2;
-
-                    if (!isSameSession2 && firestoreSessionId2 !== null && firestoreSessionId2 !== '') {
-                        alert('تم فتح حسابك على جهاز آخر. سيتم تسجيل خروجك.');
-                        await forceLogout();
-                        return;
-                    }
                 }
 
                 // Check expiry - log out immediately if expired
@@ -2161,7 +2092,6 @@ window.printInvoiceSingle = async () => {
                     const date = inv.createdAt ? new Date(inv.createdAt.toDate()).toLocaleString('ar-EG') : '-';
                     const payLabels = { cash: 'كاش', visa: 'فيزا', delivery: 'ديليفري' };
                     const payTag = inv.paymentMethod === 'cash' ? 'tag-grn' : inv.paymentMethod === 'visa' ? 'tag-blu' : 'tag-ylw';
-                    const userPerms = userData?.permissions || DEFAULT_PERMS;
                     let viewBtn = `<button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;" title="عرض"><i class="fas fa-eye"></i></button>`;
                     let editBtn = '';
                     if (isAdmin || userPerms.edit_invoices) {
@@ -2169,6 +2099,7 @@ window.printInvoiceSingle = async () => {
                     }
                     let printBtn = '';
                     let deleteBtn = '';
+                    const userPerms = userData?.permissions || DEFAULT_PERMS;
                     if (isAdmin || userPerms.print_invoices) {
                         printBtn = ` <button class="btn btn-blu" onclick="printInvoiceFromTable('${d.id}')" style="padding:5px 10px;" title="طباعة"><i class="fas fa-print"></i></button>`;
                     }
@@ -2284,19 +2215,11 @@ window.printInvoiceSingle = async () => {
                     html += `<tr style="background:#f8f9fa;font-weight:800;border-top:2px solid var(--dark);"><td>الإجمالي</td><td>${filteredCount}</td><td style="color:var(--primary);">${filteredTotal.toLocaleString('ar-EG')} ج.م</td><td>${filteredCount > 0 ? Math.round(filteredTotal / filteredCount).toLocaleString('ar-EG') : 0} ج.م</td></tr>`;
                     dailyBody.innerHTML = html;
                 }
-                // Update report page stats - calculate inside the function
-                let repTodaySales = 0, repTodayRevenue = 0;
-                snap.forEach(d => {
-                    const inv = d.data();
-                    if (inv.createdAt && inv.createdAt.toDate) {
-                        if (inv.createdAt.toDate() >= todayStart) { repTodaySales++; repTodayRevenue += inv.total || 0; }
-                    }
-                });
-                document.getElementById('repStSales').textContent = repTodaySales;
-                document.getElementById('repStRevenue').textContent = repTodayRevenue.toLocaleString('ar-EG') + ' ج.م';
-                const prodSnap2 = await getDocs(collection(db, "products"));
-                document.getElementById('repStProducts').textContent = prodSnap2.size;
-                document.getElementById('repStInvoices').textContent = snap.size;
+                // Update report page stats
+                document.getElementById('repStSales').textContent = todaySales;
+                document.getElementById('repStRevenue').textContent = todayRevenue.toLocaleString('ar-EG') + ' ج.م';
+                document.getElementById('repStProducts').textContent = allProducts.length;
+                document.getElementById('repStInvoices').textContent = invSnap.size;
             } catch (e) { console.error(e); }
         }
 
@@ -2334,29 +2257,12 @@ window.printInvoiceSingle = async () => {
             if (pass.length < 6) { alert('كلمة المرور ضعيفة'); return; }
             if (role !== 'admin' && (!days || days < 1)) { alert('حدد عدد أيام'); return; }
             try {
-                // PROPER FIX: Use secondary Firebase app to create user without affecting admin session
-                const secondaryApp = initializeApp({
-                    apiKey: "AIzaSyDf_FZ5dDhJCYag9EpEblgylTrxber7oks",
-                    authDomain: "cashier-52332.firebaseapp.com",
-                    projectId: "cashier-52332",
-                    storageBucket: "cashier-52332.firebasestorage.app",
-                    messagingSenderId: "708122460779",
-                    appId: "1:708122460779:web:5c0fb2f36488aa6ae3272e",
-                    measurementId: "G-8BLM2L0LN5"
-                }, 'Secondary_' + Date.now());
-
-                const secondaryAuth = getAuth(secondaryApp);
-                const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pass);
-                const newUid = cred.user.uid;
-
-                await signOut(secondaryAuth);
-                await secondaryApp.delete();
-
+                const cred = await createUserWithEmailAndPassword(auth, email, pass);
                 const perms = role === 'admin' ? { pos: true, products: true, invoices: true, reports: true, users: true, settings: true, change_password: true, monitor_only: false } : { ...DEFAULT_PERMS };
                 const udata = { email, fullName: name, role, status: "active", permissions: perms, isLoggedIn: false, createdAt: serverTimestamp(), lastLogin: serverTimestamp(), createdBy: currentUser.uid };
                 if (role !== 'admin') { const exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000); udata.daysActivated = days; udata.expiresAt = exp; }
-                await setDoc(doc(db, "users", newUid), udata);
-                alert('تم إنشاء المستخدم بنجاح!');
+                await setDoc(doc(db, "users", cred.user.uid), udata);
+                alert('تم إنشاء المستخدم');
                 closeUserModal(); loadUsersTable(); loadStats();
             } catch (err) { alert(err.code === 'auth/email-already-in-use' ? 'البريد مستخدم' : err.message); }
         };
@@ -2414,11 +2320,9 @@ window.printInvoiceSingle = async () => {
 
         window.togglePerm = (el) => {
             const cb = el.querySelector('input[type="checkbox"]');
-            // Only toggle if we clicked the div, not the checkbox itself
-            if (event && event.target !== cb) {
-                cb.checked = !cb.checked;
-            }
+            cb.checked = !cb.checked;
             el.classList.toggle('active', cb.checked);
+            console.log('Permission toggled:', cb.value, cb.checked); // Debug
         };
 
         window.updateUser = async () => {
@@ -2847,285 +2751,15 @@ window.printInvoiceSingle = async () => {
             setTimeout(() => { w.focus(); w.print(); }, 600);
         };
 
-
-        // ========== MESSAGING SYSTEM ==========
-        let msgUnsub = null;
-        let currentMsgId = null;
-        let msgTarget = 'all';
-        let allUsersList = [];
-
-        window.openMessagesModal = async () => {
-            document.getElementById('messagesModal').classList.add('show');
-            if (isAdmin) {
-                document.getElementById('adminSendPanel').classList.remove('hidden');
-                document.getElementById('msgModalTitle').textContent = 'إدارة الرسائل';
-                document.getElementById('msgListTitle').textContent = 'جميع الرسائل المرسلة';
-                await loadUsersForMsgSelect();
-            } else {
-                document.getElementById('adminSendPanel').classList.add('hidden');
-                document.getElementById('msgModalTitle').textContent = 'الرسائل الواردة';
-                document.getElementById('msgListTitle').textContent = 'الرسائل الواردة';
-            }
-            document.getElementById('msgListPanel').classList.remove('hidden');
-            document.getElementById('msgDetailPanel').classList.add('hidden');
-            await loadMessages();
-        };
-
-        window.closeMessagesModal = () => {
-            document.getElementById('messagesModal').classList.remove('show');
-            currentMsgId = null;
-        };
-
-        window.setMsgTarget = (target) => {
-            msgTarget = target;
-            document.querySelectorAll('.msg-to-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(target === 'all' ? 'toAllBtn' : 'toUserBtn').classList.add('active');
-            document.getElementById('userSelectRow').classList.toggle('hidden', target !== 'user');
-        };
-
-        window.loadUsersForMsgSelect = async () => {
-            try {
-                const snap = await getDocs(collection(db, "users"));
-                const sel = document.getElementById('msgTargetUser');
-                sel.innerHTML = '<option value="">-- اختر --</option>';
-                allUsersList = [];
-                snap.forEach(d => {
-                    const u = d.data();
-                    allUsersList.push({ id: d.id, ...u });
-                    const opt = document.createElement('option');
-                    opt.value = d.id;
-                    opt.textContent = (u.fullName || u.email) + ' (' + roleName(u.role) + ')';
-                    sel.appendChild(opt);
-                });
-            } catch (e) { console.error(e); }
-        };
-
-        window.sendMessage = async () => {
-            const content = document.getElementById('msgContent').value.trim();
-            if (!content) { alert('اكتب رسالة أولاً'); return; }
-            const targetUser = msgTarget === 'user' ? document.getElementById('msgTargetUser').value : null;
-            if (msgTarget === 'user' && !targetUser) { alert('اختر مستخدم'); return; }
-            try {
-                await addDoc(collection(db, "messages"), {
-                    content, fromId: currentUser.uid, fromName: userData?.fullName || currentUser.email,
-                    fromRole: userData?.role || 'cashier', target: msgTarget, targetUserId: targetUser,
-                    createdAt: serverTimestamp(), readBy: {}, replies: []
-                });
-                alert('تم إرسال الرسالة');
-                clearMsgForm();
-                loadMessages();
-            } catch (e) { alert('خطأ: ' + e.message); }
-        };
-
-        window.clearMsgForm = () => {
-            document.getElementById('msgContent').value = '';
-            document.getElementById('msgTargetUser').value = '';
-            setMsgTarget('all');
-        };
-
-        window.loadMessages = async () => {
-            const box = document.getElementById('messagesList');
-            box.innerHTML = '<div style="text-align:center;padding:30px;"><div class="spin"></div></div>';
-            try {
-                let q;
-                if (isAdmin) {
-                    q = query(collection(db, "messages"), orderBy("createdAt", "desc"), limit(50));
-                } else {
-                    const uid = currentUser.uid;
-                    // Get messages sent to ALL, OR messages specifically sent to this user
-                    q = query(collection(db, "messages"), 
-                        where("target", "in", ["all", "user"]), 
-                        orderBy("createdAt", "desc"), 
-                        limit(50));
-                }
-                const snap = await getDocs(q);
-                if (snap.empty) { box.innerHTML = '<div class="empty" style="padding:30px;"><i class="fas fa-envelope-open" style="font-size:40px;color:#eee;"></i><p>لا توجد رسائل</p></div>'; return; }
-                let html = '';
-                snap.forEach(d => {
-                    const m = d.data();
-                    // Filter: if message is targeted to a specific user, only show to that user
-                    if (m.target === 'user' && m.targetUserId !== currentUser.uid) return;
-                    const date = m.createdAt ? new Date(m.createdAt.toDate()).toLocaleString('ar-EG') : '-';
-                    const isRead = m.readBy && m.readBy[currentUser.uid];
-                    const replyCount = m.replies ? m.replies.length : 0;
-                    const targetLabel = m.target === 'all' ? '<span class="tag tag-blu">الكل</span>' : '<span class="tag tag-prp">محدد</span>';
-                    html += `<div class="msg-item ${isRead ? 'read' : 'unread'}" onclick="openMessageDetail('${d.id}')">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <span class="msg-from"><i class="fas fa-user-circle" style="color:var(--primary);margin-left:6px;"></i> ${m.fromName || '-'}</span>
-                            <span class="msg-time">${date}</span>
-                        </div>
-                        <div class="msg-preview">${m.content}</div>
-                        <div style="display:flex;gap:8px;margin-top:6px;">${targetLabel}${replyCount > 0 ? '<span class="msg-reply-count"><i class="fas fa-reply"></i> ' + replyCount + ' رد</span>' : ''}</div>
-                    </div>`;
-                });
-                box.innerHTML = html;
-            } catch (e) { box.innerHTML = '<div class="empty">خطأ في التحميل</div>'; }
-        };
-
-        window.openMessageDetail = async (id) => {
-            currentMsgId = id;
-            const d = await getDoc(doc(db, "messages", id));
-            if (!d.exists()) return;
-            const m = d.data();
-            const date = m.createdAt ? new Date(m.createdAt.toDate()).toLocaleString('ar-EG') : '-';
-            const targetLabel = m.target === 'all' ? 'جميع المستخدمين' : (allUsersList.find(u => u.id === m.targetUserId)?.fullName || 'مستخدم محدد');
-
-            document.getElementById('msgDetailBox').innerHTML = `
-                <div class="msg-header">
-                    <div><strong style="color:var(--primary);">${m.fromName || '-'}</strong> <span style="font-size:12px;color:#888;">(${roleName(m.fromRole)})</span></div>
-                    <span style="font-size:12px;color:#888;">${date}</span>
-                </div>
-                <div class="msg-body">${m.content}</div>
-                <div style="margin-top:8px;font-size:12px;color:#888;">إلى: ${targetLabel}</div>
-            `;
-
-            // Mark as read
-            if (!isAdmin) {
-                const readUpdate = {}; readUpdate['readBy.' + currentUser.uid] = true;
-                await setDoc(doc(db, "messages", id), readUpdate, { merge: true });
-            }
-
-            // Render replies
-            const repliesBox = document.getElementById('msgRepliesList');
-            if (m.replies && m.replies.length > 0) {
-                let rhtml = '';
-                m.replies.forEach(r => {
-                    const rdate = r.createdAt ? new Date(r.createdAt.toDate ? r.createdAt.toDate() : r.createdAt).toLocaleString('ar-EG') : '-';
-                    rhtml += `<div class="reply-item">
-                        <div style="display:flex;justify-content:space-between;">
-                            <span class="reply-from">${r.fromName || '-'}</span>
-                            <span class="reply-time">${rdate}</span>
-                        </div>
-                        <div class="reply-text">${r.content}</div>
-                    </div>`;
-                });
-                repliesBox.innerHTML = rhtml;
-            } else {
-                repliesBox.innerHTML = '<div style="text-align:center;padding:15px;color:#aaa;font-size:13px;">لا توجد ردود بعد</div>';
-            }
-
-            document.getElementById('msgListPanel').classList.add('hidden');
-            document.getElementById('msgDetailPanel').classList.remove('hidden');
-        };
-
-        window.backToMsgList = () => {
-            document.getElementById('msgDetailPanel').classList.add('hidden');
-            document.getElementById('msgListPanel').classList.remove('hidden');
-            currentMsgId = null;
-            loadMessages();
-        };
-
-        window.sendReply = async () => {
-            if (!currentMsgId) return;
-            const content = document.getElementById('msgReplyInput').value.trim();
-            if (!content) return;
-            try {
-                const msgRef = doc(db, "messages", currentMsgId);
-                const snap = await getDoc(msgRef);
-                if (!snap.exists()) return;
-                const data = snap.data();
-                const replies = data.replies || [];
-                replies.push({
-                    fromId: currentUser.uid, fromName: userData?.fullName || currentUser.email,
-                    content, createdAt: new Date().toISOString()
-                });
-                await setDoc(msgRef, { replies }, { merge: true });
-                document.getElementById('msgReplyInput').value = '';
-                openMessageDetail(currentMsgId);
-            } catch (e) { alert('خطأ: ' + e.message); }
-        };
-
-        // Real-time message listener for popup
-        function listenForMessages() {
-            if (!currentUser || isAdmin) return;
-            const q = query(collection(db, "messages"), where("target", "==", "all"), orderBy("createdAt", "desc"), limit(5));
-            onSnapshot(q, (snap) => {
-                let unreadCount = 0;
-                snap.forEach(d => {
-                    const m = d.data();
-                    if (!m.readBy || !m.readBy[currentUser.uid]) unreadCount++;
-                });
-                const badge = document.getElementById('msgBadge');
-                if (badge) {
-                    if (unreadCount > 0) { badge.textContent = unreadCount; badge.style.display = 'inline-block'; }
-                    else badge.style.display = 'none';
-                }
-                // Show popup for newest unread
-                snap.docChanges().forEach(change => {
-                    if (change.type === 'added') {
-                        const m = change.doc.data();
-                        if (!m.readBy || !m.readBy[currentUser.uid]) {
-                            showMessagePopup(change.doc.id, m);
-                        }
-                    }
-                });
-            });
-        }
-
-        function showMessagePopup(msgId, m) {
-            // Remove existing popup
-            const existing = document.getElementById('msgPopup_' + msgId);
-            if (existing) existing.remove();
-
-            const popup = document.createElement('div');
-            popup.id = 'msgPopup_' + msgId;
-            popup.className = 'msg-popup';
-            popup.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                    <div class="msg-popup-title"><i class="fas fa-envelope" style="color:var(--primary);"></i> رسالة جديدة</div>
-                    <button onclick="document.getElementById('msgPopup_${msgId}').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:#aaa;">&times;</button>
-                </div>
-                <div class="msg-popup-from">من: <strong>${m.fromName || 'الإدارة'}</strong></div>
-                <div class="msg-popup-body">${m.content}</div>
-                <div class="msg-popup-actions">
-                    <input type="text" id="popupReply_${msgId}" placeholder="اكتب رد سريع..." onkeydown="if(event.key==='Enter')sendPopupReply('${msgId}')">
-                    <button class="btn btn-main" style="padding:8px 14px;font-size:12px;" onclick="sendPopupReply('${msgId}')"><i class="fas fa-reply"></i></button>
-                    <button class="btn btn-gry" style="padding:8px 14px;font-size:12px;" onclick="markMsgRead('${msgId}');document.getElementById('msgPopup_${msgId}').remove();"><i class="fas fa-check"></i></button>
-                </div>
-            `;
-            document.body.appendChild(popup);
-
-            // Auto remove after 30 seconds
-            setTimeout(() => {
-                const el = document.getElementById('msgPopup_' + msgId);
-                if (el) el.remove();
-            }, 30000);
-        }
-
-        window.sendPopupReply = async (msgId) => {
-            const input = document.getElementById('popupReply_' + msgId);
-            if (!input) return;
-            const content = input.value.trim();
-            if (!content) return;
-            try {
-                const msgRef = doc(db, "messages", msgId);
-                const snap = await getDoc(msgRef);
-                if (!snap.exists()) return;
-                const data = snap.data();
-                const replies = data.replies || [];
-                replies.push({ fromId: currentUser.uid, fromName: userData?.fullName || currentUser.email, content, createdAt: new Date().toISOString() });
-                await setDoc(msgRef, { replies }, { merge: true });
-                const popup = document.getElementById('msgPopup_' + msgId);
-                if (popup) popup.remove();
-                alert('تم إرسال الرد');
-            } catch (e) { alert('خطأ: ' + e.message); }
-        };
-
-        window.markMsgRead = async (msgId) => {
-            const readUpdate = {}; readUpdate['readBy.' + currentUser.uid] = true;
-            await setDoc(doc(db, "messages", msgId), readUpdate, { merge: true });
-        };
-
         window.doLogout = async () => {
             if (currentSessionId) {
                 try { await setDoc(doc(db, "login_log", currentSessionId), { type: 'logout', logoutAt: serverTimestamp() }, { merge: true }); } catch (e) { console.error(e); }
             }
-            // CRITICAL: Clear currentSessionId and set lastSeen to past time
-            const pastTime = new Date(Date.now() - 60000); // 1 minute ago
+            // CRITICAL: Clear currentSessionId from Firestore so other devices can login
             if (currentUser) await setDoc(doc(db, "users", currentUser.uid), { 
                 forceLogout: false, 
                 currentSessionId: null,
-                lastSeen: pastTime
+                lastSeen: serverTimestamp()
             }, { merge: true });
             localStorage.removeItem('baron_session_id');
             if (maintenanceUnsub) maintenanceUnsub();
@@ -3208,61 +2842,6 @@ window.printInvoiceSingle = async () => {
                     const cssText = styleTag ? styleTag.innerText : '';
                     const paperW = qzPaperWidth === 'A4' ? '210mm' : qzPaperWidth + 'mm';
                     const htmlContent = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: ${paperW} auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: ${paperW}; direction: rtl; font-weight: 900; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:${paperW};font-weight:900;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}
-
-    <!-- Messages Modal -->
-    <div class="modal-bg" id="messagesModal">
-        <div class="modal-box wide" style="max-width:700px;">
-            <button class="modal-close" onclick="closeMessagesModal()">&times;</button>
-            <h2><i class="fas fa-envelope" style="color:var(--primary);"></i> <span id="msgModalTitle">الرسائل</span></h2>
-
-            <!-- Admin Send Panel -->
-            <div id="adminSendPanel" class="hidden" style="margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid #f0f0f0;">
-                <h3 style="font-size:15px;margin-bottom:12px;"><i class="fas fa-paper-plane" style="color:var(--primary);"></i> إرسال رسالة جديدة</h3>
-                <div class="msg-to-select">
-                    <button class="msg-to-btn active" id="toAllBtn" onclick="setMsgTarget('all')">📢 الكل</button>
-                    <button class="msg-to-btn" id="toUserBtn" onclick="setMsgTarget('user')">👤 مستخدم محدد</button>
-                </div>
-                <div class="form-row hidden" id="userSelectRow">
-                    <label>اختر المستخدم</label>
-                    <select id="msgTargetUser" style="width:100%;padding:10px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';">
-                        <option value="">-- اختر --</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <label>نص الرسالة</label>
-                    <textarea id="msgContent" rows="3" placeholder="اكتب رسالتك هنا..." style="width:100%;padding:10px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';font-size:14px;resize:vertical;"></textarea>
-                </div>
-                <div style="display:flex;gap:8px;justify-content:flex-end;">
-                    <button class="btn btn-gry" onclick="clearMsgForm()">إلغاء</button>
-                    <button class="btn btn-main" onclick="sendMessage()"><i class="fas fa-paper-plane"></i> إرسال</button>
-                </div>
-            </div>
-
-            <!-- Messages List -->
-            <div id="msgListPanel">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                    <h3 style="font-size:15px;"><i class="fas fa-inbox" style="color:var(--info);"></i> <span id="msgListTitle">الرسائل الواردة</span></h3>
-                    <button class="btn btn-sec" onclick="loadMessages()" style="padding:5px 12px;font-size:12px;"><i class="fas fa-sync-alt"></i> تحديث</button>
-                </div>
-                <div id="messagesList" style="max-height:400px;overflow-y:auto;">
-                    <div class="empty" style="padding:30px;"><i class="fas fa-envelope-open" style="font-size:40px;color:#eee;"></i><p>لا توجد رسائل</p></div>
-                </div>
-            </div>
-
-            <!-- Message Detail + Replies -->
-            <div id="msgDetailPanel" class="hidden">
-                <button class="btn btn-gry" onclick="backToMsgList()" style="margin-bottom:15px;"><i class="fas fa-arrow-right"></i> رجوع للقائمة</button>
-                <div class="msg-detail-box" id="msgDetailBox"></div>
-                <div style="margin-bottom:10px;"><strong>الردود:</strong></div>
-                <div id="msgRepliesList" style="max-height:200px;overflow-y:auto;margin-bottom:15px;"></div>
-                <div style="display:flex;gap:8px;">
-                    <input type="text" id="msgReplyInput" placeholder="اكتب ردك..." style="flex:1;padding:10px 15px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';font-size:14px;" onkeydown="if(event.key==='Enter')sendReply()">
-                    <button class="btn btn-main" onclick="sendReply()"><i class="fas fa-reply"></i> رد</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Pending Invoices Modal -->
     <div class="modal-bg" id="pendingModal">
         <div class="modal-box wide">
@@ -3293,8 +2872,112 @@ window.printInvoiceSingle = async () => {
             const cssText = styleTag ? styleTag.innerText : '';
             doc.open();
             doc.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: 58mm auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; font-weight: 900; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:58mm;font-weight:900;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}
+    <!-- Pending Invoices Modal -->
+    <div class="modal-bg" id="pendingModal">
+        <div class="modal-box wide">
+            <button class="modal-close" onclick="closePendingModal()">&times;</button>
+            <h2><i class="fas fa-pause-circle" style="color:var(--warning);"></i> الفواتير المعلقة</h2>
+            <table>
+                <thead><tr><th>#</th><th>الوقت</th><th>العناصر</th><th>المجموع</th><th>الكاشير</th><th>إجراءات</th></tr></thead>
+                <tbody id="pendingBody"><tr><td colspan="6" class="empty"><div class="spin"></div></td></tr></tbody>
+            </table>
+        </div>
+    </div>
 
-    <!-- Messages Modal -->
-    
+</body></html>`);
+            doc.close();
+            setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => iframe.remove(), 3000); }, 600);
+        };
+
+</script>
+
+    <!-- Quick Note Modal -->
+    <div class="modal-bg" id="noteModal">
+        <div class="modal-box" style="max-width:380px;">
+            <button class="modal-close" onclick="closeNoteModal()">&times;</button>
+            <h2><i class="fas fa-sticky-note" style="color:var(--warning);"></i> ملاحظة المنتج</h2>
+            <div style="margin-bottom:15px;">
+                <label style="display:block;margin-bottom:8px;font-weight:700;font-size:14px;">اختر ملاحظة سريعة:</label>
+                <div id="quickNotesList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('بدون خس')">بدون خس</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('بدون طماطم')">بدون طماطم</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('بدون بصل')">بدون بصل</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Spicy')">Spicy 🔥</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Extra Sauce')">Extra Sauce</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Well Done')">Well Done</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Medium')">Medium</button>
+                    <button class="btn btn-gry" style="font-size:12px;padding:6px 10px;" onclick="selectQuickNote('Extra Cheese')">Extra Cheese 🧀</button>
+                </div>
+            </div>
+            <div class="form-row">
+                <label>أو اكتب ملاحظة مخصصة:</label>
+                <textarea id="customNoteInput" rows="3" placeholder="اكتب هنا..." 
+                    style="width:100%;padding:10px;border:2px solid #e8e8e8;border-radius:10px;font-family:'Cairo';font-size:14px;resize:vertical;"
+                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveNote();}"></textarea>
+                <div style="font-size:11px;color:#888;margin-top:4px;">اضغط Enter للسطر الجديد</div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-gry" onclick="closeNoteModal()">إلغاء</button>
+                <button class="btn btn-red" onclick="clearNote()" style="margin-right:auto;"><i class="fas fa-trash"></i> مسح</button>
+                <button class="btn btn-main" onclick="saveNote()">حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printer Settings Modal -->
+    <div class="modal-bg" id="printerModal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closePrinterModal()">&times;</button>
+            <h2><i class="fas fa-print"></i> إعدادات الطابعة</h2>
+            <div class="form-row">
+                <div style="background:#e8f4fd; padding:12px 15px; border-radius:10px; color:#0c5460; font-size:13px; margin-bottom:15px;">
+                    <i class="fas fa-info-circle"></i> لازم يكون برنامج <strong>QZ Tray</strong> شغال على الجهاز. لو مش مثبّته، <a href="https://qz.io" target="_blank" style="color:var(--primary);">حمله من هنا</a>.
+                </div>
+            </div>
+            <div class="form-row">
+                <label>حالة الاتصال</label>
+                <div id="qzStatus" style="font-weight:700; color:#888;">غير متصل</div>
+            </div>
+            <div class="form-row">
+                <button class="btn btn-main" onclick="connectQZ()" id="btnConnectQZ"><i class="fas fa-plug"></i> توصيل QZ Tray</button>
+            </div>
+            <div class="form-row">
+                <label>اختر الطابعة</label>
+                <select id="printerSelect" disabled>
+                    <option value="">-- اضغط "توصيل" الأول --</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>عدد النسخ الافتراضي</label>
+                <input type="number" id="printerCopies" value="2" min="1" max="5" style="width:80px;">
+            </div>
+            <div class="form-row">
+                <label>عرض الورق (مم)</label>
+                <select id="paperWidth">
+                    <option value="58">58 مم (حرارية صغيرة)</option>
+                    <option value="80">80 مم (حرارية كبيرة)</option>
+                    <option value="A4">A4 (عادية)</option>
+                </select>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-gry" onclick="closePrinterModal()">إلغاء</button>
+                <button class="btn btn-main" onclick="savePrinterSettings()">حفظ الإعدادات</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Pending Invoices Modal -->
+    <div class="modal-bg" id="pendingModal">
+        <div class="modal-box wide">
+            <button class="modal-close" onclick="closePendingModal()">&times;</button>
+            <h2><i class="fas fa-pause-circle" style="color:var(--warning);"></i> الفواتير المعلقة</h2>
+            <table>
+                <thead><tr><th>#</th><th>الوقت</th><th>العناصر</th><th>المجموع</th><th>الكاشير</th><th>إجراءات</th></tr></thead>
+                <tbody id="pendingBody"><tr><td colspan="6" class="empty"><div class="spin"></div></td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
 </body>
 </html>
