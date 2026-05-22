@@ -502,7 +502,7 @@
                         <h3>جدول المنتجات</h3>
                         <div class="btns">
                             <button class="btn btn-sec" onclick="loadProductsTable()"><i class="fas fa-sync-alt"></i> تحديث</button>
-                            <button class="btn btn-main" id="btnAddProduct" onclick="openProductModal()" style="display:none;"><i class="fas fa-plus"></i> منتج جديد</button>
+                            <button class="btn btn-main" id="btnAddProduct" onclick="openProductModal()"><i class="fas fa-plus"></i> منتج جديد</button>
                         </div>
                     </div>
                     <table>
@@ -831,83 +831,18 @@
             </div>
             <div class="form-row">
                 <label>الصلاحيات <span style="font-size:12px;color:#888;font-weight:400;">(حدد الأقسام المتاحة للمستخدم)</span></label>
-                <div id="editUserPerms" style="display:flex;flex-direction:column;gap:20px;">
-                    <!-- POS Section -->
-                    <div style="border:2px solid #e8e8e8;border-radius:12px;padding:15px;background:#fafbfc;">
-                        <div style="font-weight:800;font-size:14px;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:8px;"><i class="fas fa-cash-register"></i> نقطة البيع</div>
-                        <div class="perm-grid">
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_pos" value="pos"><label for="perm_pos">الوصول لـ POS</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_pos_sell" value="pos_sell"><label for="perm_pos_sell">البيع / إتمام الفاتورة</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)" style="grid-column:1/-1;background:#fff3cd;border-color:var(--warning);"><input type="checkbox" id="perm_monitor_only" value="monitor_only"><label for="perm_monitor_only"><i class="fas fa-eye" style="color:var(--warning);"></i> متابعة فقط (بدون بيع)</label></div>
-                        </div>
-                    </div>
-                    <!-- Products Section -->
-                    <div style="border:2px solid #e8e8e8;border-radius:12px;padding:15px;background:#fafbfc;">
-                        <div style="font-weight:800;font-size:14px;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:8px;"><i class="fas fa-utensils"></i> المنتجات</div>
-                        <div class="perm-grid">
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_products" value="products"><label for="perm_products">عرض المنتجات</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_products_add" value="products_add"><label for="perm_products_add">إضافة منتج</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_products_edit" value="products_edit"><label for="perm_products_edit">تعديل منتج</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_products_delete" value="products_delete"><label for="perm_products_delete">حذف منتج</label></div>
-                        </div>
-                    </div>
-                    <!-- Invoices Section -->
-                    <div style="border:2px solid #e8e8e8;border-radius:12px;padding:15px;background:#fafbfc;">
-                        <div style="font-weight:800;font-size:14px;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:8px;"><i class="fas fa-file-invoice-dollar"></i> الفواتير</div>
-                        <div class="perm-grid">
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_invoices" value="invoices"><label for="perm_invoices">عرض الفواتير</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_invoices_view" value="invoices_view"><label for="perm_invoices_view">عرض تفاصيل الفاتورة</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_invoices_print" value="invoices_print"><label for="perm_invoices_print"><i class="fas fa-print" style="color:var(--info);"></i> طباعة الفواتير</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_invoices_delete" value="invoices_delete"><label for="perm_invoices_delete"><i class="fas fa-trash" style="color:var(--danger);"></i> حذف الفواتير</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_invoices_edit" value="invoices_edit"><label for="perm_invoices_edit"><i class="fas fa-edit" style="color:var(--warning);"></i> تعديل الفواتير</label></div>
-                        </div>
-                    </div>
-                    <!-- Reports Section -->
-                    <div style="border:2px solid #e8e8e8;border-radius:12px;padding:15px;background:#fafbfc;">
-                        <div style="font-weight:800;font-size:14px;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:8px;"><i class="fas fa-chart-pie"></i> التقارير</div>
-                        <div class="perm-grid">
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_reports" value="reports"><label for="perm_reports">عرض التقارير</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_reports_view" value="reports_view"><label for="perm_reports_view">عرض بيانات التقارير</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_reports_print" value="reports_print"><label for="perm_reports_print"><i class="fas fa-file-alt" style="color:var(--success);"></i> طباعة التقارير</label></div>
-                        </div>
-                    </div>
-                    <!-- Users Section -->
-                    <div style="border:2px solid #e8e8e8;border-radius:12px;padding:15px;background:#fafbfc;">
-                        <div style="font-weight:800;font-size:14px;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:8px;"><i class="fas fa-users-cog"></i> المستخدمين</div>
-                        <div class="perm-grid">
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_users" value="users"><label for="perm_users">عرض المستخدمين</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_users_view" value="users_view"><label for="perm_users_view">عرض جدول المستخدمين</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_users_add" value="users_add"><label for="perm_users_add">إضافة مستخدم</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_users_edit" value="users_edit"><label for="perm_users_edit">تعديل مستخدم</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_users_delete" value="users_delete"><label for="perm_users_delete">حذف مستخدم</label></div>
-                        </div>
-                    </div>
-                    <!-- Settings Section -->
-                    <div style="border:2px solid #e8e8e8;border-radius:12px;padding:15px;background:#fafbfc;">
-                        <div style="font-weight:800;font-size:14px;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:8px;"><i class="fas fa-cog"></i> الإعدادات</div>
-                        <div class="perm-grid">
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_settings" value="settings"><label for="perm_settings">عرض الإعدادات</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_settings_view" value="settings_view"><label for="perm_settings_view">عرض الإعدادات</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_settings_edit" value="settings_edit"><label for="perm_settings_edit">تعديل الإعدادات</label></div>
-                        </div>
-                    </div>
-                    <!-- Pending Section -->
-                    <div style="border:2px solid #e8e8e8;border-radius:12px;padding:15px;background:#fafbfc;">
-                        <div style="font-weight:800;font-size:14px;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:8px;"><i class="fas fa-pause-circle"></i> الفواتير المعلقة</div>
-                        <div class="perm-grid">
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_pending" value="pending"><label for="perm_pending">عرض الفواتير المعلقة</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_pending_view" value="pending_view"><label for="perm_pending_view">عرض المعلقة</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_pending_resume" value="pending_resume"><label for="perm_pending_resume">استعادة معلقة</label></div>
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_pending_delete" value="pending_delete"><label for="perm_pending_delete">حذف معلقة</label></div>
-                        </div>
-                    </div>
-                    <!-- Security Section -->
-                    <div style="border:2px solid #e8e8e8;border-radius:12px;padding:15px;background:#fafbfc;">
-                        <div style="font-weight:800;font-size:14px;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:8px;"><i class="fas fa-shield-alt"></i> الأمان</div>
-                        <div class="perm-grid">
-                            <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_change_password" value="change_password"><label for="perm_change_password">تغيير كلمة السر</label></div>
-                        </div>
-                    </div>
+                <div class="perm-grid" id="editUserPerms">
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_pos" value="pos"><label for="perm_pos">نقطة البيع</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_products" value="products"><label for="perm_products">المنتجات</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_invoices" value="invoices"><label for="perm_invoices">الفواتير</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_reports" value="reports"><label for="perm_reports">التقارير</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_users" value="users"><label for="perm_users">المستخدمين</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_settings" value="settings"><label for="perm_settings">الإعدادات</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_change_password" value="change_password"><label for="perm_change_password">تغيير كلمة السر</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_print_invoices" value="print_invoices"><label for="perm_print_invoices"><i class="fas fa-print" style="color:var(--info);"></i> طباعة الفواتير</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_delete_invoices" value="delete_invoices"><label for="perm_delete_invoices"><i class="fas fa-trash" style="color:var(--danger);"></i> حذف الفواتير</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)"><input type="checkbox" id="perm_print_reports" value="print_reports"><label for="perm_print_reports"><i class="fas fa-file-alt" style="color:var(--success);"></i> طباعة التقارير</label></div>
+                    <div class="perm-item" onclick="togglePerm(this)" style="grid-column:1/-1;background:#fff3cd;border-color:var(--warning);"><input type="checkbox" id="perm_monitor_only" value="monitor_only"><label for="perm_monitor_only"><i class="fas fa-eye" style="color:var(--warning);"></i> متابعة فقط (بدون بيع)</label></div>
                 </div>
             </div>
             <div class="modal-foot"><button class="btn btn-gry" onclick="closeEditUserModal()">إلغاء</button><button class="btn btn-main" onclick="updateUser()">حفظ التعديلات</button></div>
@@ -940,45 +875,8 @@
         let cartPaymentMethod = 'cash';
         let isMonitorOnly = false; // true = can view but cannot sell
 
-        const DEFAULT_PERMS = { 
-    pos: true, pos_sell: true, 
-    products: true, products_add: true, products_edit: true, products_delete: true,
-    invoices: true, invoices_view: true, invoices_print: true, invoices_delete: false, invoices_edit: false,
-    reports: true, reports_view: true, reports_print: true,
-    users: false, users_view: false, users_add: false, users_edit: false, users_delete: false,
-    settings: false, settings_view: false, settings_edit: false,
-    pending: true, pending_view: true, pending_resume: true, pending_delete: true,
-    change_password: true, monitor_only: false
-};
-        const PERM_LABELS = { 
-    pos: 'نقطة البيع', pos_sell: 'البيع في POS',
-    products: 'المنتجات', products_add: 'إضافة منتج', products_edit: 'تعديل منتج', products_delete: 'حذف منتج',
-    invoices: 'الفواتير', invoices_view: 'عرض الفواتير', invoices_print: 'طباعة الفواتير', invoices_delete: 'حذف الفواتير', invoices_edit: 'تعديل الفواتير',
-    reports: 'التقارير', reports_view: 'عرض التقارير', reports_print: 'طباعة التقارير',
-    users: 'المستخدمين', users_view: 'عرض المستخدمين', users_add: 'إضافة مستخدم', users_edit: 'تعديل مستخدم', users_delete: 'حذف مستخدم',
-    settings: 'الإعدادات', settings_view: 'عرض الإعدادات', settings_edit: 'تعديل الإعدادات',
-    pending: 'فواتير معلقة', pending_view: 'عرض المعلقة', pending_resume: 'استعادة معلقة', pending_delete: 'حذف معلقة',
-    change_password: 'تغيير كلمة السر', monitor_only: 'متابعة فقط (بدون بيع)'
-};
-
-        // ========== PERMISSION SYSTEM ==========
-        function checkPerm(permKey) {
-            if (isAdmin) return true;
-            if (!userData || !userData.permissions) return false;
-            return userData.permissions[permKey] === true;
-        }
-        function hasAnyPerm(permKeys) {
-            if (isAdmin) return true;
-            if (!userData || !userData.permissions) return false;
-            return permKeys.some(k => userData.permissions[k] === true);
-        }
-        function requirePerm(permKey, actionName) {
-            if (!checkPerm(permKey)) {
-                alert('ليس لديك صلاحية: ' + (actionName || PERM_LABELS[permKey] || permKey));
-                return false;
-            }
-            return true;
-        }
+        const DEFAULT_PERMS = { pos: true, products: true, invoices: true, reports: true, users: false, settings: false, change_password: true, monitor_only: false, print_invoices: true, delete_invoices: false, print_reports: true, edit_invoices: false };
+        const PERM_LABELS = { pos: 'نقطة البيع', products: 'المنتجات', invoices: 'الفواتير', reports: 'التقارير', users: 'المستخدمين', settings: 'الإعدادات', change_password: 'تغيير كلمة السر', monitor_only: 'متابعة فقط (بدون بيع)', print_invoices: 'طباعة الفواتير', delete_invoices: 'حذف الفواتير', print_reports: 'طباعة التقارير', edit_invoices: 'تعديل الفواتير' };
         const CAT_ICONS = {
             'تشكن': { icon: 'fa-drumstick-bite', class: 'cat-chicken' },
             'برجر': { icon: 'fa-hamburger', class: 'cat-burger' },
@@ -1038,12 +936,6 @@
                     document.getElementById('btnAddUser').style.display = 'inline-flex';
                     document.getElementById('navUsers').classList.add('show');
                     document.getElementById('btnResetInv').style.display = 'inline-flex';
-                } else {
-                    // Show/hide buttons based on permissions
-                    if (checkPerm('products_add')) document.getElementById('btnAddProduct').style.display = 'inline-flex';
-                    if (checkPerm('users_add')) document.getElementById('btnAddUser').style.display = 'inline-flex';
-                    if (checkPerm('users')) document.getElementById('navUsers').classList.add('show');
-                    if (checkPerm('settings_edit')) document.getElementById('btnResetInv').style.display = 'inline-flex';
                 }
                 // Show change password button if user has permission
                 if (userPerms.change_password === true || isAdmin) {
@@ -1118,7 +1010,6 @@
 
         window.enableMaintenanceMode = async () => {
             if (!isAdmin) { alert('للمدير فقط'); return; }
-            if (!requirePerm('settings_edit', 'تفعيل وضع الصيانة')) return;
             if (!confirm('هل أنت متأكد من إغلاق جميع جلسات المستخدمين؟')) return;
             try {
                 await setDoc(doc(db, "settings", "maintenance"), { enabled: true, startedAt: serverTimestamp(), startedBy: currentUser.uid, startedByName: userData?.fullName || currentUser.email });
@@ -1142,7 +1033,6 @@
 
         window.disableMaintenanceMode = async () => {
             if (!isAdmin) { alert('للمدير فقط'); return; }
-            if (!requirePerm('settings_edit', 'إيقاف وضع الصيانة')) return;
             try {
                 await setDoc(doc(db, "settings", "maintenance"), { enabled: false, endedAt: serverTimestamp(), endedBy: currentUser.uid }, { merge: true });
                 const usersSnap = await getDocs(collection(db, "users"));
@@ -1158,7 +1048,6 @@
 
         window.forceLogoutUser = async (uid) => {
             if (!isAdmin) { alert('للمدير فقط'); return; }
-            if (!requirePerm('users_edit', 'إغلاق جلسة مستخدم')) return;
             if (!confirm('هل أنت متأكد من إغلاق جلسة هذا المستخدم؟')) return;
             try {
                 await setDoc(doc(db, "users", uid), { 
@@ -1297,12 +1186,6 @@
                 checkoutBtn.style.background = '#888';
                 checkoutBtn.onclick = () => alert('ليس لديك صلاحية البيع - متابعة فقط');
             }
-            // Disable hold button
-            const holdBtn = document.getElementById('holdBtn');
-            if (holdBtn) {
-                holdBtn.disabled = true;
-                holdBtn.style.background = '#888';
-            }
             // Show monitor banner
             const banner = document.createElement('div');
             banner.id = 'monitorBanner';
@@ -1314,8 +1197,7 @@
             }
             // Disable cart interactions
             document.querySelectorAll('.cart-qty button').forEach(btn => btn.disabled = true);
-            const clearCart = document.querySelector('.clear-cart');
-            if (clearCart) clearCart.style.display = 'none';
+            document.querySelector('.clear-cart').style.display = 'none';
         };
 
         window.toggleSidebar = () => {
@@ -1328,18 +1210,17 @@
 
         window.navTo = async (sec) => {
             // Check permissions for non-admin users
-            if (!isAdmin) {
-                const permMap = {
-                    pos: 'pos', products: 'products', invoices: 'invoices',
-                    reports: 'reports', users: 'users', settings: 'settings'
-                };
-                const requiredPerm = permMap[sec];
-                if (requiredPerm && !checkPerm(requiredPerm)) {
-                    alert('ليس لديك صلاحية الوصول إلى: ' + (PERM_LABELS[requiredPerm] || requiredPerm));
-                    return;
+            if (!isAdmin && userData && userData.permissions) {
+                const perms = userData.permissions;
+                // Monitor-only users can view everything but cannot sell
+                if (!isMonitorOnly) {
+                    if (sec === 'users' && !perms.users) { alert('ليس لديك صلاحية الوصول'); return; }
+                    if (sec === 'products' && !perms.products) { alert('ليس لديك صلاحية الوصول'); return; }
+                    if (sec === 'invoices' && !perms.invoices) { alert('ليس لديك صلاحية الوصول'); return; }
+                    if (sec === 'reports' && !perms.reports) { alert('ليس لديك صلاحية الوصول'); return; }
                 }
             }
-            if (sec === 'users' && !isAdmin && !checkPerm('users')) { alert('للمدير فقط'); return; }
+            if (sec === 'users' && !isAdmin) { alert('للمدير فقط'); return; }
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             if (event && event.currentTarget) event.currentTarget.classList.add('active');
             if (window.innerWidth <= 768 && document.querySelector('.sidebar').classList.contains('open')) toggleSidebar();
@@ -1666,23 +1547,9 @@
             box.innerHTML = html;
             document.getElementById('cartCount').textContent = '(' + cart.reduce((s, i) => s + i.qty, 0) + ')';
             updateCartSummary();
-            // Check sell permission
-            if (!checkPerm('pos_sell')) {
-                btn.disabled = true;
-                btn.textContent = 'لا يوجد صلاحية بيع';
-                btn.style.background = '#888';
-            } else {
-                btn.disabled = false;
-            }
+            btn.disabled = false;
             const holdBtn1 = document.getElementById('holdBtn');
-            if (holdBtn1) {
-                if (!checkPerm('pending_resume')) {
-                    holdBtn1.disabled = true;
-                    holdBtn1.style.background = '#888';
-                } else {
-                    holdBtn1.disabled = false;
-                }
-            }
+            if (holdBtn1) holdBtn1.disabled = false;
         }
 
         async function getNextInvoiceNumber() {
@@ -1700,7 +1567,6 @@
         }
 
         window.checkout = async () => {
-            if (!requirePerm('pos_sell', 'إتمام البيع')) return;
             if (cart.length === 0) return;
             if (cartPaymentMethod !== 'cash') {
                 const calcAuto = getCartCalculations();
@@ -1819,7 +1685,8 @@ let currentEditInvoice = null;
 let currentEditItems = [];
 
 window.openEditInvoiceModal = async (id) => {
-    if (!requirePerm('invoices_edit', 'تعديل الفواتير')) return;
+    const userPerms = userData?.permissions || DEFAULT_PERMS;
+    if (!isAdmin && !userPerms.edit_invoices) { alert('ليس لديك صلاحية تعديل الفواتير'); return; }
 
     const d = await getDoc(doc(db, "invoices", id));
     if (!d.exists()) { alert('الفاتورة غير موجودة'); return; }
@@ -2020,14 +1887,16 @@ window.printInvoiceSingle = async () => {
         };
 
         window.printInvoiceFromModal = async () => {
-            if (!requirePerm('invoices_print', 'طباعة الفواتير')) return;
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.print_invoices) { alert('ليس لديك صلاحية طباعة الفواتير'); return; }
             const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
             allInvs.forEach(d => { setDoc(doc(db, "invoices", d.id), { printed: true, printedAt: serverTimestamp(), copies: 1 }, { merge: true }); });
             window.print();
         };
 
         window.printInvoiceDoubleFromModal = async () => {
-            if (!requirePerm('invoices_print', 'طباعة الفواتير')) return;
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.print_invoices) { alert('ليس لديك صلاحية طباعة الفواتير'); return; }
             const wrap = document.getElementById('printInvoice');
             if (!wrap) return;
             const clone = wrap.cloneNode(true);
@@ -2046,7 +1915,8 @@ window.printInvoiceSingle = async () => {
         };
 
         window.printInvoiceFromTable = async (id) => {
-            if (!requirePerm('invoices_print', 'طباعة الفواتير')) return;
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.print_invoices) { alert('ليس لديك صلاحية طباعة الفواتير'); return; }
             const d = await getDoc(doc(db, "invoices", id));
             if (!d.exists()) return;
             const inv = d.data();
@@ -2069,10 +1939,7 @@ window.printInvoiceSingle = async () => {
 
         window.closeInvoiceModal = () => { document.getElementById('invoiceModal').classList.remove('show'); };
 
-        window.openProductModal = () => {
-            if (!requirePerm('products_add', 'إضافة منتج')) return;
-            document.getElementById('productModal').classList.add('show'); generateProductCode();
-        };
+        window.openProductModal = () => { document.getElementById('productModal').classList.add('show'); generateProductCode(); };
         window.closeProductModal = () => {
             document.getElementById('productModal').classList.remove('show');
             document.getElementById('prodCode').value = '';
@@ -2083,7 +1950,6 @@ window.printInvoiceSingle = async () => {
             document.getElementById('prodModalTitle').textContent = 'إضافة منتج جديد';
         };
         window.saveProduct = async () => {
-            if (!requirePerm('products_add', 'إضافة منتج')) return;
             const code = document.getElementById('prodCode').value.trim();
             const name = document.getElementById('prodName').value.trim();
             const price = parseFloat(document.getElementById('prodPrice').value);
@@ -2107,21 +1973,13 @@ window.printInvoiceSingle = async () => {
                 let html = '';
                 snap.forEach(d => {
                     const p = d.data();
-                    let actions = '';
-                    if (isAdmin || checkPerm('products_edit')) {
-                        actions += `<button class="btn btn-sec" onclick="editProduct('${d.id}')" style="padding:5px 10px;"><i class="fas fa-edit"></i></button>`;
-                    }
-                    if (isAdmin || checkPerm('products_delete')) {
-                        actions += `<button class="btn btn-red" onclick="deleteProduct('${d.id}')" style="padding:5px 10px;"><i class="fas fa-trash"></i></button>`;
-                    }
-                    html += `<tr><td><strong>${p.code || '-'}</strong></td><td><strong>${p.name}</strong></td><td style="color:var(--primary);font-weight:800;">${p.price} ج.م</td><td>${p.category || '-'}</td><td><span class="tag tag-grn">متاح</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap;">${actions}</div></td></tr>`;
+                    html += `<tr><td><strong>${p.code || '-'}</strong></td><td><strong>${p.name}</strong></td><td style="color:var(--primary);font-weight:800;">${p.price} ج.م</td><td>${p.category || '-'}</td><td><span class="tag tag-grn">متاح</span></td><td><button class="btn btn-sec" onclick="editProduct('${d.id}')" style="padding:5px 10px;"><i class="fas fa-edit"></i></button><button class="btn btn-red" onclick="deleteProduct('${d.id}')" style="padding:5px 10px;"><i class="fas fa-trash"></i></button></td></tr>`;
                 });
                 tbody.innerHTML = html;
             } catch (e) { tbody.innerHTML = '<tr><td colspan="6" class="empty">خطأ</td></tr>'; }
         }
 
         window.deleteProduct = async (id) => {
-            if (!requirePerm('products_delete', 'حذف المنتجات')) return;
             if (!confirm('هل أنت متأكد؟')) return;
             await deleteDoc(doc(db, "products", id));
             loadProductsTable(); loadPosProducts(); loadStats();
@@ -2129,7 +1987,6 @@ window.printInvoiceSingle = async () => {
         let editingProductId = null;
 
         window.editProduct = async (id) => {
-            if (!requirePerm('products_edit', 'تعديل المنتجات')) return;
             editingProductId = id;
             try {
                 const d = await getDoc(doc(db, "products", id));
@@ -2198,7 +2055,6 @@ window.printInvoiceSingle = async () => {
 
         window.saveProductEdit = async () => {
             if (!editingProductId) return;
-            if (!requirePerm('products_edit', 'تعديل المنتجات')) return;
             const name = document.getElementById('editProdName').value.trim();
             const price = parseFloat(document.getElementById('editProdPrice').value);
             let cat = document.getElementById('editProdCat').value;
@@ -2236,20 +2092,18 @@ window.printInvoiceSingle = async () => {
                     const date = inv.createdAt ? new Date(inv.createdAt.toDate()).toLocaleString('ar-EG') : '-';
                     const payLabels = { cash: 'كاش', visa: 'فيزا', delivery: 'ديليفري' };
                     const payTag = inv.paymentMethod === 'cash' ? 'tag-grn' : inv.paymentMethod === 'visa' ? 'tag-blu' : 'tag-ylw';
-                    let viewBtn = '';
+                    let viewBtn = `<button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;" title="عرض"><i class="fas fa-eye"></i></button>`;
                     let editBtn = '';
-                    let printBtn = '';
-                    let deleteBtn = '';
-                    if (isAdmin || checkPerm('invoices_view')) {
-                        viewBtn = `<button class="btn btn-sec" onclick="viewInvoice('${d.id}')" style="padding:5px 10px;" title="عرض"><i class="fas fa-eye"></i></button>`;
-                    }
-                    if (isAdmin || checkPerm('invoices_edit')) {
+                    if (isAdmin || userPerms.edit_invoices) {
                         editBtn = ` <button class="btn btn-warn" onclick="openEditInvoiceModal('${d.id}')" style="padding:5px 10px;" title="تعديل"><i class="fas fa-edit"></i></button>`;
                     }
-                    if (isAdmin || checkPerm('invoices_print')) {
+                    let printBtn = '';
+                    let deleteBtn = '';
+                    const userPerms = userData?.permissions || DEFAULT_PERMS;
+                    if (isAdmin || userPerms.print_invoices) {
                         printBtn = ` <button class="btn btn-blu" onclick="printInvoiceFromTable('${d.id}')" style="padding:5px 10px;" title="طباعة"><i class="fas fa-print"></i></button>`;
                     }
-                    if (isAdmin || checkPerm('invoices_delete')) {
+                    if (isAdmin || userPerms.delete_invoices) {
                         deleteBtn = ` <button class="btn btn-red" onclick="deleteInvoice('${d.id}')" style="padding:5px 10px;" title="حذف"><i class="fas fa-trash"></i></button>`;
                     }
                     html += `<tr><td style="text-align:center;"><input type="checkbox" class="inv-select" value="${d.id}"></td><td><strong>#${invNum}</strong></td><td>${date}</td><td>${inv.itemCount || 0} عنصر</td><td style="color:var(--primary);font-weight:800;">${inv.subTotal || inv.total || 0} ج.م</td><td>${inv.deliveryFee || 0} ج.م</td><td style="color:var(--success);">${inv.discountAmount || 0} ج.م</td><td style="font-weight:800;">${inv.total || 0} ج.م</td><td><span class="tag ${payTag}">${payLabels[inv.paymentMethod] || inv.paymentMethod}</span></td><td>${inv.cashierName || '-'}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap;">${viewBtn}${editBtn}${printBtn}${deleteBtn}</div></td></tr>`;
@@ -2275,7 +2129,8 @@ window.printInvoiceSingle = async () => {
             showInvoice(d.id, inv.invoiceNumber || d.id.slice(-6), inv.items || [], calc);
         };
         window.deleteInvoice = async (id) => {
-            if (!requirePerm('invoices_delete', 'حذف الفواتير')) return;
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.delete_invoices) { alert('ليس لديك صلاحية حذف الفواتير'); return; }
             if (!confirm('هل أنت متأكد من حذف الفاتورة؟')) return;
             await deleteDoc(doc(db, "invoices", id));
             loadInvoicesTable(); loadStats();
@@ -2283,7 +2138,6 @@ window.printInvoiceSingle = async () => {
 
         window.resetInvoiceCounter = async () => {
             if (!isAdmin) { alert('للمدير فقط'); return; }
-            if (!requirePerm('settings_edit', 'إعادة ترقيم الفواتير')) return;
             if (!confirm('هل أنت متأكد من إعادة ترقيم الفواتير من 1؟')) return;
             try {
                 await setDoc(doc(db, "settings", "invoiceCounter"), { value: 0, resetAt: serverTimestamp(), resetBy: currentUser.uid });
@@ -2291,12 +2145,10 @@ window.printInvoiceSingle = async () => {
             } catch (e) { alert('خطأ: ' + e.message); }
         };
 
-        window.printDayReport = () => {
-            if (!requirePerm('reports_print', 'طباعة تقرير اليوم')) return;
-            window.print();
-        };
+        window.printDayReport = () => { window.print(); };
         window.printReports = () => {
-            if (!requirePerm('reports_print', 'طباعة التقارير')) return;
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.print_reports) { alert('ليس لديك صلاحية طباعة التقارير'); return; }
             window.print();
         };
         window.printLoginLog = () => { window.print(); };
@@ -2373,7 +2225,6 @@ window.printInvoiceSingle = async () => {
 
         window.openUserModal = () => {
             if (!isAdmin) { alert('للمدير فقط'); return; }
-            if (!requirePerm('users_add', 'إضافة مستخدم')) return;
             document.getElementById('userModal').classList.add('show');
             toggleUserDays();
         };
@@ -2397,7 +2248,6 @@ window.printInvoiceSingle = async () => {
         };
         window.saveUser = async () => {
             if (!isAdmin) { alert('للمدير فقط'); return; }
-            if (!requirePerm('users_add', 'إضافة مستخدم')) return;
             const name = document.getElementById('userName').value.trim();
             const email = document.getElementById('userEmail').value.trim();
             const pass = document.getElementById('userPass').value;
@@ -2419,7 +2269,6 @@ window.printInvoiceSingle = async () => {
 
         window.openEditUserModal = async (uid) => {
             if (!isAdmin) { alert('للمدير فقط'); return; }
-            if (!requirePerm('users_edit', 'تعديل مستخدم')) return;
             const ud = await getDoc(doc(db, "users", uid));
             if (!ud.exists()) return;
             const u = ud.data();
@@ -2478,7 +2327,6 @@ window.printInvoiceSingle = async () => {
 
         window.updateUser = async () => {
             if (!isAdmin) { alert('للمدير فقط'); return; }
-            if (!requirePerm('users_edit', 'تعديل مستخدم')) return;
             const uid = document.getElementById('editUserId').value;
             if (!uid) return;
             const name = document.getElementById('editUserName').value.trim();
@@ -2529,7 +2377,6 @@ window.printInvoiceSingle = async () => {
 
         window.toggleUserStatus = async (uid, currentStatus) => {
             if (!isAdmin) { alert('للمدير فقط'); return; }
-            if (!requirePerm('users_edit', 'تعديل حالة المستخدم')) return;
             const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
             const action = newStatus === 'active' ? 'تفعيل' : 'تعطيل';
             if (!confirm(`هل تريد ${action} هذا الحساب؟`)) return;
@@ -2603,19 +2450,15 @@ window.printInvoiceSingle = async () => {
                     const hoursDisplay = hours > 0 ? `<span class="hours-badge">${hours.toFixed(1)} س</span>` : '<span style="color:#ccc;font-size:12px;">0</span>';
 
                     let acts = '';
-                    if (isAdmin || checkPerm('users_edit') || checkPerm('users_delete')) {
+                    if (isAdmin) {
                         acts = `<div class="user-actions">`;
-                        if (isAdmin || checkPerm('users_edit')) {
-                            acts += `<button class="btn btn-sec" onclick="openEditUserModal('${d.id}')" title="تعديل"><i class="fas fa-edit"></i></button>`;
-                        }
-                        if (!isAdminUser && (isAdmin || checkPerm('users_edit'))) {
+                        acts += `<button class="btn btn-sec" onclick="openEditUserModal('${d.id}')" title="تعديل"><i class="fas fa-edit"></i></button>`;
+                        if (!isAdminUser) {
                             acts += `<button class="btn ${isActive ? 'btn-red' : 'btn-grn'}" onclick="toggleUserStatus('${d.id}', '${u.status}')" title="${isActive ? 'تعطيل' : 'تفعيل'}"><i class="fas fa-power-off"></i></button>`;
                             acts += `<button class="btn btn-grn" onclick="extendUser('${d.id}')" title="تمديد"><i class="fas fa-calendar-plus"></i></button>`;
                             acts += `<button class="btn btn-warn" onclick="forceLogoutUser('${d.id}')" title="إغلاق الجلسة"><i class="fas fa-ban"></i></button>`;
                         }
-                        if (isAdmin || checkPerm('users_delete')) {
-                            acts += `<button class="btn btn-red" onclick="deleteUser('${d.id}')" title="حذف"><i class="fas fa-trash"></i></button>`;
-                        }
+                        acts += `<button class="btn btn-red" onclick="deleteUser('${d.id}')" title="حذف"><i class="fas fa-trash"></i></button>`;
                         acts += `</div>`;
                     } else acts = '<span style="color:#ccc;">-</span>';
 
@@ -2655,7 +2498,6 @@ window.printInvoiceSingle = async () => {
 
         window.extendUser = async (uid) => {
             if (!isAdmin) return;
-            if (!requirePerm('users_edit', 'تمديد صلاحية مستخدم')) return;
             const days = parseInt(prompt('كم يوم تريد إضافته؟'));
             if (!days || days < 1) return;
             const ud = await getDoc(doc(db, "users", uid));
@@ -2671,7 +2513,6 @@ window.printInvoiceSingle = async () => {
 
         window.deleteUser = async (id) => {
             if (!isAdmin) return;
-            if (!requirePerm('users_delete', 'حذف مستخدم')) return;
             if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع!')) return;
             await deleteDoc(doc(db, "users", id));
             loadUsersTable(); loadStats();
@@ -2718,7 +2559,6 @@ window.printInvoiceSingle = async () => {
         }
 
         window.holdInvoice = async () => {
-            if (!requirePerm('pending_resume', 'تعليق الفاتورة')) return;
             if (cart.length === 0) return;
             if (isMonitorOnly) { alert('وضع المتابعة فقط - لا يمكن التعليق'); return; }
             const calc = getCartCalculations();
@@ -2741,7 +2581,6 @@ window.printInvoiceSingle = async () => {
         };
 
         window.openPendingModal = async () => {
-            if (!checkPerm('pending')) { alert('ليس لديك صلاحية الوصول للفواتير المعلقة'); return; }
             document.getElementById('pendingModal').classList.add('show');
             await loadPendingInvoices();
         };
@@ -2785,7 +2624,6 @@ window.printInvoiceSingle = async () => {
         };
 
         window.resumePendingInvoice = async (id) => {
-            if (!requirePerm('pending_resume', 'استعادة فاتورة معلقة')) return;
             const d = await getDoc(doc(db, "pending_invoices", id));
             if (!d.exists()) return;
             const p = d.data();
@@ -2801,7 +2639,6 @@ window.printInvoiceSingle = async () => {
         };
 
         window.printPendingInvoice = async (id) => {
-            if (!requirePerm('invoices_print', 'طباعة الفاتورة المعلقة')) return;
             const d = await getDoc(doc(db, "pending_invoices", id));
             if (!d.exists()) return;
             const p = d.data();
@@ -2815,7 +2652,6 @@ window.printInvoiceSingle = async () => {
         };
 
         window.deletePendingInvoice = async (id) => {
-            if (!requirePerm('pending_delete', 'حذف فاتورة معلقة')) return;
             if (!confirm('هل أنت متأكد من حذف الفاتورة المعلقة؟')) return;
             await deleteDoc(doc(db, "pending_invoices", id));
             loadPendingInvoices();
@@ -2843,7 +2679,8 @@ window.printInvoiceSingle = async () => {
         window.printSelectedInvoices = async () => {
             const ids = getSelectedInvoices();
             if (ids.length === 0) { alert('اختر فواتير أولاً'); return; }
-            if (!requirePerm('invoices_print', 'طباعة الفواتير')) return;
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.print_invoices) { alert('ليس لديك صلاحية'); return; }
             for (const id of ids) {
                 await printInvoiceFromTable(id);
                 await new Promise(r => setTimeout(r, 1200));
@@ -2853,14 +2690,14 @@ window.printInvoiceSingle = async () => {
         window.deleteSelectedInvoices = async () => {
             const ids = getSelectedInvoices();
             if (ids.length === 0) { alert('اختر فواتير أولاً'); return; }
-            if (!requirePerm('invoices_delete', 'حذف الفواتير')) return;
+            const userPerms = userData?.permissions || DEFAULT_PERMS;
+            if (!isAdmin && !userPerms.delete_invoices) { alert('ليس لديك صلاحية'); return; }
             if (!confirm(`هل أنت متأكد من حذف ${ids.length} فاتورة؟`)) return;
             for (const id of ids) await deleteDoc(doc(db, "invoices", id));
             loadInvoicesTable(); loadStats();
         };
 
         window.exportSelectedToPDF = async () => {
-            if (!requirePerm('invoices_view', 'تصدير الفواتير')) return;
             const ids = getSelectedInvoices();
             if (ids.length === 0) { alert('اختر فواتير أولاً'); return; }
             const invoices = [];
