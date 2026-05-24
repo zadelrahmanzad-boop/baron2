@@ -2441,13 +2441,20 @@ window.printInvoiceSingle = async () => {
             if (!requirePerm('users_add', 'إضافة مستخدم')) return;
 
             const name = document.getElementById('userName').value.trim();
-            const email = document.getElementById('userEmail').value.trim();
+            let email = document.getElementById('userEmail').value.trim();
             const pass = document.getElementById('userPass').value;
             const role = document.getElementById('userRole').value;
             const days = parseInt(document.getElementById('userDays').value);
 
+            // Email validation
+            email = email.toLowerCase().replace(/\s/g, '');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
             if (!name || !email || !pass) { alert('املأ جميع الحقول'); return; }
-            if (pass.length < 6) { alert('كلمة المرور ضعيفة'); return; }
+            if (!emailRegex.test(email)) { alert('البريد الإلكتروني غير صحيح.
+
+مثال: user@example.com'); return; }
+            if (pass.length < 6) { alert('كلمة المرور ضعيفة (6 أحرف على الأقل)'); return; }
             if (role !== 'admin' && (!days || days < 1)) { alert('حدد عدد أيام'); return; }
 
             // حفظ بيانات المدير الحالي قبل الإنشاء
@@ -2510,7 +2517,12 @@ window.printInvoiceSingle = async () => {
                         currentUser = auth.currentUser;
                     } catch(e) {}
                 }
-                alert(err.code === 'auth/email-already-in-use' ? 'البريد مستخدم' : err.message); 
+                let errorMsg = err.message;
+                if (err.code === 'auth/email-already-in-use') errorMsg = 'البريد الإلكتروني مستخدم بالفعل';
+                else if (err.code === 'auth/invalid-email') errorMsg = 'البريد الإلكتروني غير صحيح. تأكد من وجود @ ونقطة (.)';
+                else if (err.code === 'auth/weak-password') errorMsg = 'كلمة المرور ضعيفة جداً (6 أحرف على الأقل)';
+                else if (err.code === 'auth/network-request-failed') errorMsg = 'خطأ في الاتصال بالإنترنت';
+                alert('خطأ: ' + errorMsg); 
             }
         };
 
