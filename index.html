@@ -2416,8 +2416,9 @@ window.printInvoiceSingle = async () => {
             // حفظ بيانات المدير الحالي قبل الإنشاء
             const adminUser = auth.currentUser;
             const adminEmail = adminUser ? adminUser.email : null;
+            const adminUid = adminUser ? adminUser.uid : null;
 
-            if (!adminEmail) { alert('خطأ: لم يتم التعرف على المدير الحالي'); return; }
+            if (!adminEmail || !adminUid) { alert('خطأ: لم يتم التعرف على المدير الحالي'); return; }
 
             // طلب كلمة مرور المدير للتأكيد وإعادة تسجيل الدخول
             const adminPassword = prompt('أدخل كلمة مرور المدير الحالي للتأكيد وإعادة الدخول:');
@@ -2436,7 +2437,7 @@ window.printInvoiceSingle = async () => {
                     email, fullName: name, role, status: "active", 
                     permissions: perms, isLoggedIn: false, 
                     createdAt: serverTimestamp(), lastLogin: serverTimestamp(), 
-                    createdBy: adminUser.uid 
+                    createdBy: adminUid 
                 };
                 if (role !== 'admin') { 
                     const exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000); 
@@ -2445,17 +2446,32 @@ window.printInvoiceSingle = async () => {
                 }
                 await setDoc(doc(db, "users", newUid), udata);
 
-                // 3. إعادة تسجيل دخول المدير فوراً (مهم جداً)
+                // 3. انتظر قليلاً للتأكد من كتابة البيانات في Firestore
+                await new Promise(r => setTimeout(r, 1000));
+
+                // 4. إعادة تسجيل دخول المدير فوراً (مهم جداً)
                 await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+
+                // 5. تحديث currentUser و userData للمدير
+                currentUser = auth.currentUser;
+                const ud = await getDoc(doc(db, "users", currentUser.uid));
+                if (ud.exists()) {
+                    userData = ud.data();
+                    isAdmin = userData.role === 'admin';
+                }
 
                 alert('تم إنشاء المستخدم بنجاح والعودة للمدير');
                 closeUserModal(); 
                 loadUsersTable(); 
                 loadStats();
             } catch (err) { 
+                console.error('saveUser error:', err);
                 // في حالة أي خطأ، نحاول إرجاع المدير
                 if (adminEmail && adminPassword) {
-                    try { await signInWithEmailAndPassword(auth, adminEmail, adminPassword); } catch(e) {}
+                    try { 
+                        await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+                        currentUser = auth.currentUser;
+                    } catch(e) {}
                 }
                 alert(err.code === 'auth/email-already-in-use' ? 'البريد مستخدم' : err.message); 
             }
@@ -2587,8 +2603,15 @@ window.printInvoiceSingle = async () => {
             const tbody = document.getElementById('usersBody');
             tbody.innerHTML = '<tr><td colspan="11" class="empty"><div class="spin"></div></td></tr>';
             try {
+                console.log('loadUsersTable: Fetching users...');
                 const snap = await getDocs(collection(db, "users"));
-                if (snap.empty) { tbody.innerHTML = '<tr><td colspan="11" class="empty"><i class="fas fa-users"></i><p>لا يوجد مستخدمين</p></td></tr>'; return; }
+                console.log('loadUsersTable: Found', snap.size, 'users');
+
+                if (snap.empty) { 
+                    tbody.innerHTML = '<tr><td colspan="11" class="empty"><i class="fas fa-users"></i><p>لا يوجد مستخدمين</p></td></tr>'; 
+                    return; 
+                }
+
                 let html = '', count = 0;
                 const now = new Date();
 
@@ -2607,6 +2630,7 @@ window.printInvoiceSingle = async () => {
                 snap.forEach(d => {
                     count++;
                     const u = d.data();
+                    console.log('loadUsersTable: User', count, '-', u.email, 'role:', u.role, 'fullName:', u.fullName);
                     const created = u.createdAt ? new Date(u.createdAt.toDate()).toLocaleDateString('ar-EG') : '-';
                     const isAdminUser = u.role === 'admin';
                     let daysBadge = '', isExpired = false;
@@ -2666,7 +2690,11 @@ window.printInvoiceSingle = async () => {
                     html += `<tr><td>${count}</td><td><strong>${u.fullName || '-'}</strong></td><td>${u.email}</td><td>${roleTag}</td><td>${statusTag}</td><td>${daysBadge}</td><td>${permIcons}</td><td>${hoursDisplay}</td><td>${onlineStatus}</td><td>${created}</td><td>${acts}</td></tr>`;
                 });
                 tbody.innerHTML = html;
-            } catch (e) { tbody.innerHTML = '<tr><td colspan="11" class="empty">خطأ</td></tr>'; }
+                console.log('loadUsersTable: Rendered', count, 'users');
+            } catch (e) { 
+                console.error('loadUsersTable error:', e);
+                tbody.innerHTML = '<tr><td colspan="11" class="empty">خطأ: ' + e.message + '</td></tr>'; 
+            }
         }
 
         async function loadLoginLog() {
