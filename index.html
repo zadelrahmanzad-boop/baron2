@@ -917,7 +917,7 @@
     <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.3/qz-tray.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, deleteDoc, addDoc, setDoc, serverTimestamp, query, orderBy, limit, runTransaction, where, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const app = initializeApp({
@@ -2398,23 +2398,63 @@ window.printInvoiceSingle = async () => {
         window.saveUser = async () => {
             if (!isAdmin) { alert('للمدير فقط'); return; }
             if (!requirePerm('users_add', 'إضافة مستخدم')) return;
+
             const name = document.getElementById('userName').value.trim();
             const email = document.getElementById('userEmail').value.trim();
             const pass = document.getElementById('userPass').value;
             const role = document.getElementById('userRole').value;
             const days = parseInt(document.getElementById('userDays').value);
+
             if (!name || !email || !pass) { alert('املأ جميع الحقول'); return; }
             if (pass.length < 6) { alert('كلمة المرور ضعيفة'); return; }
             if (role !== 'admin' && (!days || days < 1)) { alert('حدد عدد أيام'); return; }
+
+            // حفظ بيانات المدير الحالي قبل الإنشاء
+            const adminUser = auth.currentUser;
+            const adminEmail = adminUser ? adminUser.email : null;
+
+            if (!adminEmail) { alert('خطأ: لم يتم التعرف على المدير الحالي'); return; }
+
+            // طلب كلمة مرور المدير للتأكيد وإعادة تسجيل الدخول
+            const adminPassword = prompt('أدخل كلمة مرور المدير الحالي للتأكيد وإعادة الدخول:');
+            if (!adminPassword) return;
+
             try {
+                // 1. إنشاء المستخدم الجديد (هنا Firebase تسجل خروج المدير وتدخل بالجديد)
                 const cred = await createUserWithEmailAndPassword(auth, email, pass);
-                const perms = role === 'admin' ? { pos: true, products: true, invoices: true, reports: true, users: true, settings: true, change_password: true, monitor_only: false } : { ...DEFAULT_PERMS };
-                const udata = { email, fullName: name, role, status: "active", permissions: perms, isLoggedIn: false, createdAt: serverTimestamp(), lastLogin: serverTimestamp(), createdBy: currentUser.uid };
-                if (role !== 'admin') { const exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000); udata.daysActivated = days; udata.expiresAt = exp; }
-                await setDoc(doc(db, "users", cred.user.uid), udata);
-                alert('تم إنشاء المستخدم');
-                closeUserModal(); loadUsersTable(); loadStats();
-            } catch (err) { alert(err.code === 'auth/email-already-in-use' ? 'البريد مستخدم' : err.message); }
+                const newUid = cred.user.uid;
+
+                // 2. حفظ بيانات المستخدم الجديد في Firestore
+                const perms = role === 'admin' 
+                    ? { pos: true, products: true, invoices: true, reports: true, users: true, settings: true, change_password: true, monitor_only: false } 
+                    : { ...DEFAULT_PERMS };
+                const udata = { 
+                    email, fullName: name, role, status: "active", 
+                    permissions: perms, isLoggedIn: false, 
+                    createdAt: serverTimestamp(), lastLogin: serverTimestamp(), 
+                    createdBy: adminUser.uid 
+                };
+                if (role !== 'admin') { 
+                    const exp = new Date(Date.now() + days * 24 * 60 * 60 * 1000); 
+                    udata.daysActivated = days; 
+                    udata.expiresAt = exp; 
+                }
+                await setDoc(doc(db, "users", newUid), udata);
+
+                // 3. إعادة تسجيل دخول المدير فوراً (مهم جداً)
+                await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+
+                alert('تم إنشاء المستخدم بنجاح والعودة للمدير');
+                closeUserModal(); 
+                loadUsersTable(); 
+                loadStats();
+            } catch (err) { 
+                // في حالة أي خطأ، نحاول إرجاع المدير
+                if (adminEmail && adminPassword) {
+                    try { await signInWithEmailAndPassword(auth, adminEmail, adminPassword); } catch(e) {}
+                }
+                alert(err.code === 'auth/email-already-in-use' ? 'البريد مستخدم' : err.message); 
+            }
         };
 
         window.openEditUserModal = async (uid) => {
