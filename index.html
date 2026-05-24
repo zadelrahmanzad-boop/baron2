@@ -933,6 +933,7 @@
         const db = getFirestore(app);
 
         let currentUser = null, userData = null, isAdmin = false, cart = [], allProducts = [];
+        let currentLogDocId = null;
         let productCategories = ["تشكن", "برجر", "سايدز", "مشروبات", "أخرى"];
         let currentSessionId = null;
         let maintenanceUnsub = null;
@@ -1088,6 +1089,9 @@
                     logoutAt: null, sessionDuration: null, sessionId: sessionId,
                     userAgent: navigator.userAgent.substring(0, 100), ip: 'unknown'
                 });
+
+                // Save the document ID so we can update it on logout
+                currentLogDocId = logRef.id;
             } catch (e) { console.error(e); }
         }
 
@@ -2955,19 +2959,45 @@ window.printInvoiceSingle = async () => {
         };
 
         window.doLogout = async () => {
-            if (currentSessionId) {
-                try { await setDoc(doc(db, "login_log", currentSessionId), { type: 'logout', logoutAt: serverTimestamp() }, { merge: true }); } catch (e) { console.error(e); }
+            try {
+                // Unsubscribe from maintenance listener first
+                if (maintenanceUnsub && typeof maintenanceUnsub === 'function') {
+                    try { maintenanceUnsub(); } catch(e) {}
+                }
+
+                // Clear local storage immediately
+                localStorage.removeItem('baron_session_id');
+
+                // Update Firestore user status if we have current user
+                if (currentUser && currentUser.uid) {
+                    try {
+                        await setDoc(doc(db, "users", currentUser.uid), { 
+                            forceLogout: false, 
+                            currentSessionId: null,
+                            lastSeen: serverTimestamp()
+                        }, { merge: true });
+                    } catch (e) { console.error('User status update error:', e); }
+                }
+
+                // Update login log if we have the document ID
+                if (currentLogDocId) {
+                    try {
+                        await setDoc(doc(db, "login_log", currentLogDocId), { 
+                            type: 'logout', 
+                            logoutAt: serverTimestamp() 
+                        }, { merge: true });
+                    } catch (e) { console.error('Log update error:', e); }
+                }
+
+                // Sign out from Firebase Auth
+                await signOut(auth);
+
+            } catch (err) {
+                console.error('Logout error:', err);
+            } finally {
+                // ALWAYS redirect, even if signOut failed
+                window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
             }
-            // CRITICAL: Clear currentSessionId from Firestore so other devices can login
-            if (currentUser) await setDoc(doc(db, "users", currentUser.uid), { 
-                forceLogout: false, 
-                currentSessionId: null,
-                lastSeen: serverTimestamp()
-            }, { merge: true });
-            localStorage.removeItem('baron_session_id');
-            if (maintenanceUnsub) maintenanceUnsub();
-            await signOut(auth);
-            window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/";
         };
     
 
