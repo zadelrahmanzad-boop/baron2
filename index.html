@@ -2364,10 +2364,17 @@ window.printInvoiceSingle = async () => {
                     dailyBody.innerHTML = html;
                 }
                 // Update report page stats
-                document.getElementById('repStSales').textContent = todaySales;
-                document.getElementById('repStRevenue').textContent = todayRevenue.toLocaleString('ar-EG') + ' ج.م';
+                let todaySalesCount = 0;
+                snap.forEach(d => {
+                    const inv = d.data();
+                    if (inv.createdAt && inv.createdAt.toDate) {
+                        if (inv.createdAt.toDate() >= todayStart) todaySalesCount++;
+                    }
+                });
+                document.getElementById('repStSales').textContent = todaySalesCount;
+                document.getElementById('repStRevenue').textContent = todayTotal.toLocaleString('ar-EG') + ' ج.م';
                 document.getElementById('repStProducts').textContent = allProducts.length;
-                document.getElementById('repStInvoices').textContent = invSnap.size;
+                document.getElementById('repStInvoices').textContent = snap.size;
             } catch (e) { console.error(e); }
         }
 
@@ -3004,20 +3011,7 @@ window.printInvoiceSingle = async () => {
                     const styleTag = document.querySelector('style');
                     const cssText = styleTag ? styleTag.innerText : '';
                     const paperW = qzPaperWidth === 'A4' ? '210mm' : qzPaperWidth + 'mm';
-                    const htmlContent = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: ${paperW} auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: ${paperW}; direction: rtl; font-weight: 900; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:${paperW};font-weight:900;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}
-    <!-- Pending Invoices Modal -->
-    <div class="modal-bg" id="pendingModal">
-        <div class="modal-box wide">
-            <button class="modal-close" onclick="closePendingModal()">&times;</button>
-            <h2><i class="fas fa-pause-circle" style="color:var(--warning);"></i> الفواتير المعلقة</h2>
-            <table>
-                <thead><tr><th>#</th><th>الوقت</th><th>العناصر</th><th>المجموع</th><th>الكاشير</th><th>إجراءات</th></tr></thead>
-                <tbody id="pendingBody"><tr><td colspan="6" class="empty"><div class="spin"></div></td></tr></tbody>
-            </table>
-        </div>
-    </div>
-
-</body></html>`;
+                    const htmlContent = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: ${paperW} auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: ${paperW}; direction: rtl; font-weight: 900; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:${paperW};font-weight:900;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}</body></html>`;
                     const config = qz.configs.create(qzPrinter, { copies: qzPrinterCopies });
                     await qz.print(config, [{ type: 'html', format: 'plain', data: htmlContent }]);
                     const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
@@ -3035,18 +3029,6 @@ window.printInvoiceSingle = async () => {
             const cssText = styleTag ? styleTag.innerText : '';
             doc.open();
             doc.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><style>@page { size: 58mm auto; margin: 0; } body { margin: 0; padding: 0; font-family: 'Cairo', sans-serif; width: 58mm; direction: rtl; font-weight: 900; } .page-break { page-break-after: always; height: 0; display: block; } ${cssText}</style></head><body style="margin:0;padding:0;direction:rtl;width:58mm;font-weight:900;">${original.outerHTML}<div class="page-break"></div>${original.outerHTML}
-    <!-- Pending Invoices Modal -->
-    <div class="modal-bg" id="pendingModal">
-        <div class="modal-box wide">
-            <button class="modal-close" onclick="closePendingModal()">&times;</button>
-            <h2><i class="fas fa-pause-circle" style="color:var(--warning);"></i> الفواتير المعلقة</h2>
-            <table>
-                <thead><tr><th>#</th><th>الوقت</th><th>العناصر</th><th>المجموع</th><th>الكاشير</th><th>إجراءات</th></tr></thead>
-                <tbody id="pendingBody"><tr><td colspan="6" class="empty"><div class="spin"></div></td></tr></tbody>
-            </table>
-        </div>
-    </div>
-
 </body></html>`);
             doc.close();
             setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => iframe.remove(), 3000); }, 600);
