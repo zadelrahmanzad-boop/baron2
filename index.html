@@ -2713,9 +2713,13 @@ window.printInvoiceSingle = async () => {
 
         function listenPendingBadge() {
             if (!currentUser) return;
-            const q = query(collection(db, "pending_invoices"), where("cashierId", "==", currentUser.uid));
-            pendingUnsub = onSnapshot(q, (snap) => {
-                const count = snap.size;
+            // Use onSnapshot on full collection and filter in JS to avoid index requirements
+            pendingUnsub = onSnapshot(collection(db, "pending_invoices"), (snap) => {
+                let count = 0;
+                snap.forEach(d => {
+                    const data = d.data();
+                    if (isAdmin || data.cashierId === currentUser.uid) count++;
+                });
                 const badge = document.getElementById('pendingBadge');
                 if (badge) {
                     if (count > 0) { badge.textContent = count; badge.style.display = 'inline-block'; }
@@ -2761,10 +2765,18 @@ window.printInvoiceSingle = async () => {
             const tbody = document.getElementById('pendingBody');
             tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="spin"></div></td></tr>';
             try {
-                let q;
-                if (isAdmin) q = query(collection(db, "pending_invoices"), orderBy("createdAt", "desc"));
-                else q = query(collection(db, "pending_invoices"), where("cashierId", "==", currentUser.uid), orderBy("createdAt", "desc"));
-                const snap = await getDocs(q);
+                // Fetch all pending invoices and filter/sort in JS to avoid Firestore index requirements
+                const snap = await getDocs(collection(db, "pending_invoices"));
+                let docs = [];
+                snap.forEach(d => { docs.push({ id: d.id, ...d.data() }); });
+                // Filter by cashier for non-admin users
+                if (!isAdmin) docs = docs.filter(d => d.cashierId === currentUser.uid);
+                // Sort by createdAt desc
+                docs.sort((a, b) => {
+                    const aTime = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
+                    const bTime = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
+                    return bTime - aTime;
+                });
                 if (snap.empty) { tbody.innerHTML = '<tr><td colspan="6" class="empty"><i class="fas fa-pause-circle"></i><p>لا توجد فواتير معلقة</p></td></tr>'; return; }
                 let html = '', count = 0;
                 snap.forEach(d => {
