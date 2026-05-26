@@ -1154,56 +1154,62 @@ window.saveInvoiceEdit = async () => {
             } catch (e) {}
         }
 
-        // Build complete HTML document for the invoice
-        function buildInvoiceHTML(invoiceNumber) {
-            const printWrap = document.getElementById('printInvoice');
-            if (!printWrap) return null;
-
-            const cssText = document.querySelector('style')?.innerText || '';
-
-            return `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>فاتورة BARON - ${invoiceNumber}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        @page { size: 58mm auto; margin: 0; }
-        body { 
-            margin: 0; 
-            padding: 2mm; 
-            font-family: 'Cairo', 'Arial', sans-serif; 
-            width: 54mm; 
-            direction: rtl; 
-            font-weight: 900;
-            box-sizing: border-box;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-        ${cssText}
-    </style>
-</head>
-<body>${printWrap.outerHTML}</body>
-</html>`;
+        // Load html2pdf.js library dynamically
+        let html2pdfLoaded = false;
+        async function loadHtml2Pdf() {
+            if (html2pdfLoaded) return true;
+            if (typeof html2pdf !== 'undefined') {
+                html2pdfLoaded = true;
+                return true;
+            }
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                script.onload = () => { html2pdfLoaded = true; resolve(true); };
+                script.onerror = () => reject(new Error('فشل تحميل مكتبة html2pdf.js'));
+                document.head.appendChild(script);
+            });
         }
 
-        // Main save function - uses browser's native Print to PDF
+        // Generate and save PDF using html2pdf.js
         window.saveInvoiceAsPDF = async (invoiceNumber) => {
             if (!requirePerm('invoices_print', 'حفظ الفاتورة كـ PDF')) return;
 
             const btn = event.target.closest('button');
             const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحضير...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري إنشاء PDF...';
             btn.disabled = true;
 
             try {
-                const invoiceHTML = buildInvoiceHTML(invoiceNumber);
-                if (!invoiceHTML) throw new Error('لم يتم العثور على محتوى الفاتورة');
+                // Load library
+                await loadHtml2Pdf();
+
+                const printWrap = document.getElementById('printInvoice');
+                if (!printWrap) throw new Error('لم يتم العثور على محتوى الفاتورة');
 
                 const suggestedName = `BARON_Invoice_${invoiceNumber}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.pdf`;
-                const pdfBlob = new Blob([invoiceHTML], { type: 'text/html;charset=utf-8' });
 
-                // Try File System Access API first
+                // Configure html2pdf options for thermal 58mm receipt
+                const opt = {
+                    margin: 0,
+                    filename: suggestedName,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { 
+                        scale: 3,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    },
+                    jsPDF: { 
+                        unit: 'mm', 
+                        format: [58, 200], // 58mm width, auto height
+                        orientation: 'portrait',
+                        hotfixes: ['px_scaling']
+                    }
+                };
+
+                // Try File System Access API for native save dialog
                 if ('showSaveFilePicker' in window) {
                     try {
                         let fileHandle;
@@ -1230,11 +1236,15 @@ window.saveInvoiceEdit = async () => {
                             });
                         }
 
+                        // Generate PDF blob using html2pdf
+                        const pdfBlob = await html2pdf().set(opt).from(printWrap).output('blob');
+
+                        // Write to file
                         const writable = await fileHandle.createWritable();
                         await writable.write(pdfBlob);
                         await writable.close();
 
-                        alert(`✅ تم حفظ الفاتورة بنجاح!\n\n📄 الملف: ${fileHandle.name}\n\n💡 لفتحه كـ PDF حقيقي:\n1. افتح الملف في المتصفح\n2. اضغط Ctrl+P\n3. اختر "Save as PDF"`);
+                        alert(`✅ تم حفظ الفاتورة بنجاح!\n\n📄 الملف: ${fileHandle.name}`);
 
                         // Mark as saved in DB
                         const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
@@ -1261,34 +1271,15 @@ window.saveInvoiceEdit = async () => {
                     }
                 }
 
-                // Fallback: Open print dialog in new window with auto-print
-                const url = URL.createObjectURL(pdfBlob);
-                const printWindow = window.open(url, '_blank');
-
-                // Auto-trigger print after content loads
-                const checkAndPrint = () => {
-                    if (printWindow.document.readyState === 'complete') {
-                        setTimeout(() => {
-                            printWindow.focus();
-                            printWindow.print();
-                        }, 500);
-                    } else {
-                        setTimeout(checkAndPrint, 100);
-                    }
-                };
-                checkAndPrint();
-
-                // Cleanup
-                setTimeout(() => URL.revokeObjectURL(url), 30000);
-
-                alert('💾 تم فتح الفاتورة في نافذة جديدة\nاضغط "Save as PDF" في حوار الطباعة');
+                // Fallback: use html2pdf default download
+                await html2pdf().set(opt).from(printWrap).save();
 
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
 
             } catch (e) {
                 console.error('PDF save error:', e);
-                alert('❌ خطأ: ' + e.message);
+                alert('❌ خطأ في حفظ PDF: ' + e.message);
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
             }
