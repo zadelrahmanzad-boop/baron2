@@ -835,73 +835,289 @@
             }
         };
 
-        // ========== INVOICE PRINT - MATCHING IMAGE 2 ==========
-        function showInvoice(invId, invoiceNumber, items, calc) {
-            const modal = document.getElementById('invoiceModal');
-            const box = document.getElementById('invoiceDetailContent');
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('ar-EG');
-            const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-            const payLabels = { cash: 'كاش', visa: 'فيزا', delivery: 'ديليفري' };
-            const payMethodLabel = payLabels[cartPaymentMethod] || cartPaymentMethod;
+// ========== INVOICE PRINT - MATCHING IMAGE 2 ==========
+function showInvoice(invId, invoiceNumber, items, calc) {
+    const modal = document.getElementById('invoiceModal');
+    const box = document.getElementById('invoiceDetailContent');
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ar-EG');
+    const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+    const payLabels = { cash: 'كاش', visa: 'فيزا', delivery: 'ديليفري' };
+    const payMethodLabel = payLabels[cartPaymentMethod] || cartPaymentMethod;
 
-            let rows = '';
-            items.forEach(i => {
-                const noteText = (i.note || '').toString().trim();
-                let noteRow = '';
-                if (noteText) {
-                    const noteLines = noteText.split(/\n|\r/).map(l => l.trim()).filter(l => l);
-                    if (noteLines.length > 0) {
-                        const noteHtml = noteLines.map(line => `<div>${line}</div>`).join('');
-                        noteRow = `<tr class="note-row"><td colspan="4"><i class="fas fa-sticky-note" style="color:#d68910;margin-left:4px;"></i> ${noteHtml}</td></tr>`;
-                    }
-                }
-                rows += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price}</td><td>${i.total.toLocaleString('en-US')}</td></tr>${noteRow}`;
-            });
-
-            const invoiceHTML = `
-            <div class="invoice-print-wrap" id="printInvoice">
-                <div class="inv-header">
-                    <div class="logo-text">BARON</div>
-                    <div class="sub-text">DONE WITH LOVE</div>
-                    <div class="inv-logo">
-                        <img src="${LOGO_URL}" alt="BARON" onerror="this.style.display='none'" style="width:100%;max-width:58mm;height:auto;margin:2px auto;display:block;">
-                    </div>
-                </div>
-                <div class="inv-meta">
-                    <strong>فاتورة: ${invoiceNumber}</strong><br>
-                    ${timeStr} ص<br>
-                    ${dateStr}<br>
-                    كاشير: ${userData?.fullName || currentUser.email}
-                </div>
-                <table class="inv-table">
-                    <thead>
-                        <tr><th>اسم الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
-                <div class="inv-footer-box">
-                    <div class="f-row"><span class="lbl">حساب الدفع عن طريق: ${payMethodLabel}</span><span class="val"></span></div>
-                    <div class="f-row"><span class="lbl">المدفوع:</span><span class="val">${calc.paidAmount.toLocaleString('en-US')}</span></div>
-                    <div class="f-row"><span class="lbl">خصم %:</span><span class="val">${calc.discountPercent}%</span></div>
-                    <div class="f-row"><span class="lbl">الخصم:</span><span class="val">${calc.discountAmount.toLocaleString('en-US')}</span></div>
-                    <div class="f-row"><span class="lbl">المتبقي:</span><span class="val">${calc.remaining.toLocaleString('en-US')}</span></div>
-                    <div class="f-row"><span class="lbl">ديليفري:</span><span class="val">${calc.deliveryFee.toLocaleString('en-US')}</span></div>
-                    <div class="f-row total-row"><span class="lbl">المجموع:</span><span class="val">${calc.finalTotal.toLocaleString('en-US')}</span></div>
-                </div>
-                <div class="inv-phone">خدمه التوصيل : 01070004717</div>
-                <div class="inv-thanks">شكراً لزيارتكم - BARON</div>
-            </div>`;
-
-            box.innerHTML = invoiceHTML + `
-            <div class="no-print" style="text-align:center;margin-top:15px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-                <button class="btn btn-gry" onclick="closeInvoiceModal()">إغلاق</button>
-                <button class="btn btn-blu" onclick="printInvoiceFromModal()"><i class="fas fa-print"></i> طباعة</button>
-                <button class="btn btn-drk" onclick="printInvoiceDoubleFromModal()"><i class="fas fa-copy"></i> طباعة نسختين</button>
-            </div>`;
-            modal.classList.add('show');
+    let rows = '';
+    items.forEach(i => {
+        const noteText = (i.note || '').toString().trim();
+        let noteRow = '';
+        if (noteText) {
+            const noteLines = noteText.split(/\n|\r/).map(l => l.trim()).filter(l => l);
+            if (noteLines.length > 0) {
+                const noteHtml = noteLines.map(line => `<div>${line}</div>`).join('');
+                noteRow = `<tr class="note-row"><td colspan="4"><i class="fas fa-sticky-note" style="color:#d68910;margin-left:4px;"></i> ${noteHtml}</td></tr>`;
+            }
         }
+        rows += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price}</td><td>${i.total.toLocaleString('en-US')}</td></tr>${noteRow}`;
+    });
 
+    const invoiceHTML = `
+    <div class="invoice-print-wrap" id="printInvoice">
+        <div class="inv-header">
+            <div class="logo-text">BARON</div>
+            <div class="sub-text">DONE WITH LOVE</div>
+            <div class="inv-logo">
+                <img src="${LOGO_URL}" alt="BARON" onerror="this.style.display='none'" style="width:100%;max-width:58mm;height:auto;margin:2px auto;display:block;">
+            </div>
+        </div>
+        <div class="inv-meta">
+            <strong>فاتورة: ${invoiceNumber}</strong><br>
+            ${timeStr} ص<br>
+            ${dateStr}<br>
+            كاشير: ${userData?.fullName || currentUser.email}
+        </div>
+        <table class="inv-table">
+            <thead>
+                <tr><th>اسم الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+        <div class="inv-footer-box">
+            <div class="f-row"><span class="lbl">حساب الدفع عن طريق: ${payMethodLabel}</span><span class="val"></span></div>
+            <div class="f-row"><span class="lbl">المدفوع:</span><span class="val">${calc.paidAmount.toLocaleString('en-US')}</span></div>
+            <div class="f-row"><span class="lbl">خصم %:</span><span class="val">${calc.discountPercent}%</span></div>
+            <div class="f-row"><span class="lbl">الخصم:</span><span class="val">${calc.discountAmount.toLocaleString('en-US')}</span></div>
+            <div class="f-row"><span class="lbl">المتبقي:</span><span class="val">${calc.remaining.toLocaleString('en-US')}</span></div>
+            <div class="f-row"><span class="lbl">ديليفري:</span><span class="val">${calc.deliveryFee.toLocaleString('en-US')}</span></div>
+            <div class="f-row total-row"><span class="lbl">المجموع:</span><span class="val">${calc.finalTotal.toLocaleString('en-US')}</span></div>
+        </div>
+        <div class="inv-phone">خدمه التوصيل : 01070004717</div>
+        <div class="inv-thanks">شكراً لزيارتكم - BARON</div>
+    </div>`;
+
+    box.innerHTML = invoiceHTML + `
+    <div class="no-print" style="text-align:center;margin-top:15px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-gry" onclick="closeInvoiceModal()">إغلاق</button>
+        <button class="btn btn-drk" onclick="saveInvoiceAsPDF('${invoiceNumber}')"><i class="fas fa-file-pdf"></i> حفظ نسخة PDF</button>
+    </div>`;
+    modal.classList.add('show');
+}
+
+// ========== SAVE INVOICE AS PDF ==========
+window.saveInvoiceAsPDF = async (invoiceNumber) => {
+    if (!requirePerm('invoices_print', 'حفظ الفاتورة كـ PDF')) return;
+    
+    const printWrap = document.getElementById('printInvoice');
+    if (!printWrap) { alert('خطأ: لم يتم العثور على محتوى الفاتورة'); return; }
+
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحضير...';
+    btn.disabled = true;
+
+    try {
+        // Get all styles
+        const cssText = document.querySelector('style')?.innerText || '';
+        
+        // Build complete HTML document optimized for thermal printing
+        const fullHTML = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>فاتورة BARON - ${invoiceNumber}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        @page { size: 58mm auto; margin: 0; }
+        body { 
+            margin: 0; 
+            padding: 2mm; 
+            font-family: 'Cairo', 'Arial', sans-serif; 
+            width: 54mm; 
+            direction: rtl; 
+            font-weight: 900;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        ${cssText}
+    </style>
+</head>
+<body>${printWrap.outerHTML}</body>
+</html>`;
+
+        // Method 1: File System Access API (Chrome/Edge)
+        if ('showSaveFilePicker' in window) {
+            try {
+                // Try to use saved directory first
+                let savedDir = await getSavedDirectoryHandle();
+                let fileHandle;
+                const suggestedName = `BARON_Invoice_${invoiceNumber}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.pdf`;
+                
+                if (savedDir) {
+                    try {
+                        const perm = await savedDir.requestPermission({ mode: 'readwrite' });
+                        if (perm === 'granted') {
+                            fileHandle = await savedDir.getFileHandle(suggestedName, { create: true });
+                        }
+                    } catch (e) { /* invalid handle */ }
+                }
+                
+                if (!fileHandle) {
+                    fileHandle = await window.showSaveFilePicker({
+                        suggestedName: suggestedName,
+                        types: [{
+                            description: 'PDF Document',
+                            accept: { 'application/pdf': ['.pdf'] }
+                        }]
+                    });
+                }
+                
+                const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+                const writable = await fileHandle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                
+                // Remember location for next time
+                await saveLastUsedLocation(fileHandle);
+                
+                alert(`✅ تم حفظ الفاتورة بنجاح!\n\n📄 الملف: ${fileHandle.name}\n\n💡 لفتحه كـ PDF حقيقي:\n1. افتح الملف في المتصفح\n2. اضغط Ctrl+P\n3. اختر "Save as PDF"`);
+                
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+                return;
+                
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                    return;
+                }
+                console.log('File System API failed, using fallback:', err);
+            }
+        }
+        
+        // Method 2: Fallback - Open print dialog in new window
+        const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        
+        const printWindow = window.open(url, '_blank');
+        
+        // Auto-trigger print after content loads
+        const checkAndPrint = () => {
+            if (printWindow.document.readyState === 'complete') {
+                setTimeout(() => {
+                    printWindow.focus();
+                    printWindow.print();
+                }, 300);
+            } else {
+                setTimeout(checkAndPrint, 100);
+            }
+        };
+        checkAndPrint();
+        
+        // Cleanup
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        
+    } catch (e) {
+        console.error('Save PDF error:', e);
+        alert('❌ خطأ: ' + e.message);
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+};
+
+// ========== DIRECTORY HANDLE MANAGEMENT ==========
+
+const DB_NAME = 'BaronPOS_DB';
+const DB_VERSION = 1;
+const STORE_NAME = 'directories';
+
+function openBaronDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+    });
+}
+
+async function getSavedDirectoryHandle() {
+    try {
+        const db = await openBaronDB();
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        return await new Promise((resolve, reject) => {
+            const req = store.get('invoice_save_dir');
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error);
+        });
+    } catch (e) {
+        return null;
+    }
+}
+
+async function saveDirectoryHandle(dirHandle) {
+    const db = await openBaronDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    await new Promise((resolve, reject) => {
+        const req = store.put(dirHandle, 'invoice_save_dir');
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+    });
+}
+
+// Try to extract and save directory from file handle
+async function saveLastUsedLocation(fileHandle) {
+    // File System Access API doesn't expose parent path for security
+    // We use a separate "Set Default Folder" feature instead
+}
+
+// ========== SET DEFAULT SAVE FOLDER ==========
+window.setDefaultSaveFolder = async () => {
+    if (!('showDirectoryPicker' in window)) {
+        alert('⚠️ هذه الميزة تتطلب Chrome أو Edge أحدث إصدار');
+        return;
+    }
+    
+    try {
+        const dirHandle = await window.showDirectoryPicker();
+        const perm = await dirHandle.requestPermission({ mode: 'readwrite' });
+        
+        if (perm === 'granted') {
+            await saveDirectoryHandle(dirHandle);
+            alert(`✅ تم حفظ مجلد الحفظ الافتراضي!\n\n📁 المجلد: ${dirHandle.name}\n\nالفواتير القادمة ستحفظ هنا تلقائياً`);
+        } else {
+            alert('❌ يجب منح صلاحية الكتابة للمجلد');
+        }
+    } catch (err) {
+        if (err.name === 'AbortError') return;
+        alert('❌ خطأ: ' + err.message);
+    }
+};
+
+// ========== CLEAR SAVED LOCATION ==========
+window.clearSavedLocation = async () => {
+    try {
+        const db = await openBaronDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        await new Promise((resolve, reject) => {
+            const req = store.delete('invoice_save_dir');
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+        });
+        alert('✅ تم مسح موقع الحفظ المحفوظ');
+    } catch (e) {
+        alert('❌ خطأ: ' + e.message);
+    }
+};
         // ========== EDIT INVOICE FUNCTIONS ==========
 let currentEditInvoice = null;
 let currentEditItems = [];
