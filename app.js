@@ -834,234 +834,73 @@
                 btn.textContent = 'إتمام البيع وطباعة';
             }
         };
-// ========== SAVE INVOICE AS PDF - PRACTICAL SOLUTION ==========
-window.saveInvoiceAsPDF = async (invoiceNumber) => {
-    if (!requirePerm('invoices_print', 'حفظ الفاتورة كـ PDF')) return;
-    
-    const printWrap = document.getElementById('printInvoice');
-    if (!printWrap) { alert('خطأ: لم يتم العثور على محتوى الفاتورة'); return; }
 
-    // Show loading
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري إنشاء PDF...';
-    btn.disabled = true;
+        // ========== INVOICE PRINT - MATCHING IMAGE 2 ==========
+        function showInvoice(invId, invoiceNumber, items, calc) {
+            const modal = document.getElementById('invoiceModal');
+            const box = document.getElementById('invoiceDetailContent');
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ar-EG');
+            const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            const payLabels = { cash: 'كاش', visa: 'فيزا', delivery: 'ديليفري' };
+            const payMethodLabel = payLabels[cartPaymentMethod] || cartPaymentMethod;
 
-    try {
-        // Create a clean HTML document for the invoice
-        const styleTag = document.querySelector('style');
-        const cssText = styleTag ? styleTag.innerText : '';
-        
-        const invoiceHTML = `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>فاتورة BARON - ${invoiceNumber}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        @page { size: 58mm auto; margin: 0; }
-        body { 
-            margin: 0; 
-            padding: 3mm; 
-            font-family: 'Cairo', sans-serif; 
-            width: 52mm; 
-            direction: rtl; 
-            font-weight: 900;
-            box-sizing: border-box;
-        }
-        ${cssText}
-    </style>
-</head>
-<body>
-    ${printWrap.outerHTML}
-</body>
-</html>`;
-
-        // Method 1: Try File System Access API for native save dialog
-        if ('showSaveFilePicker' in window) {
-            try {
-                const suggestedName = `BARON_Invoice_${invoiceNumber}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.pdf`;
-                
-                // Check if we have a saved directory handle
-                let savedDir = await getSavedDirectoryHandle();
-                let fileHandle;
-                
-                if (savedDir) {
-                    // Verify permission
-                    const perm = await savedDir.requestPermission({ mode: 'readwrite' });
-                    if (perm === 'granted') {
-                        fileHandle = await savedDir.getFileHandle(suggestedName, { create: true });
+            let rows = '';
+            items.forEach(i => {
+                const noteText = (i.note || '').toString().trim();
+                let noteRow = '';
+                if (noteText) {
+                    const noteLines = noteText.split(/\n|\r/).map(l => l.trim()).filter(l => l);
+                    if (noteLines.length > 0) {
+                        const noteHtml = noteLines.map(line => `<div>${line}</div>`).join('');
+                        noteRow = `<tr class="note-row"><td colspan="4"><i class="fas fa-sticky-note" style="color:#d68910;margin-left:4px;"></i> ${noteHtml}</td></tr>`;
                     }
                 }
-                
-                if (!fileHandle) {
-                    // Show native save dialog
-                    fileHandle = await window.showSaveFilePicker({
-                        suggestedName: suggestedName,
-                        types: [{
-                            description: 'PDF Files',
-                            accept: { 'application/pdf': ['.pdf'] }
-                        }, {
-                            description: 'HTML Files',
-                            accept: { 'text/html': ['.html'] }
-                        }]
-                    });
-                    
-                    // Save this location for future (get parent directory)
-                    // Note: We can't get parent from fileHandle directly, 
-                    // so we'll ask user to set a default folder separately
-                }
-
-                // Write content - since we can't generate real PDF easily in browser,
-                // we'll save as HTML that opens perfectly in browser and can be printed to PDF
-                const blob = new Blob([invoiceHTML], { type: 'text/html;charset=utf-8' });
-                const writable = await fileHandle.createWritable();
-                await writable.write(blob);
-                await writable.close();
-                
-                // Remember this file's directory for next time
-                await saveLastUsedDirectory(fileHandle);
-                
-                alert(`✅ تم حفظ الفاتورة بنجاح!\n\n📁 الملف: ${fileHandle.name}\n\n💡 نصيحة: افتح الملف في المتصفح واضغط Ctrl+P ثم اختر "Save as PDF" لتحويله لصيغة PDF حقيقية`);
-                
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                return;
-                
-            } catch (err) {
-                if (err.name === 'AbortError') {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    return; // User cancelled
-                }
-                // Fall through to fallback
-            }
-        }
-        
-        // Method 2: Fallback - Open print dialog with "Save as PDF" pre-selected
-        // Open new window with invoice content
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(invoiceHTML);
-        printWindow.document.close();
-        
-        // Auto-trigger print after short delay
-        setTimeout(() => {
-            printWindow.focus();
-            printWindow.print();
-            
-            // After print dialog closes, try to close the window
-            printWindow.addEventListener('focus', () => {
-                setTimeout(() => {
-                    if (!printWindow.closed) printWindow.close();
-                }, 1000);
+                rows += `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price}</td><td>${i.total.toLocaleString('en-US')}</td></tr>${noteRow}`;
             });
-        }, 500);
-        
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        
-    } catch (e) {
-        console.error('PDF save error:', e);
-        alert('❌ خطأ في حفظ الملف: ' + e.message);
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
-};
 
-// ========== DIRECTORY MANAGEMENT ==========
+            const invoiceHTML = `
+            <div class="invoice-print-wrap" id="printInvoice">
+                <div class="inv-header">
+                    <div class="logo-text">BARON</div>
+                    <div class="sub-text">DONE WITH LOVE</div>
+                    <div class="inv-logo">
+                        <img src="${LOGO_URL}" alt="BARON" onerror="this.style.display='none'" style="width:100%;max-width:58mm;height:auto;margin:2px auto;display:block;">
+                    </div>
+                </div>
+                <div class="inv-meta">
+                    <strong>فاتورة: ${invoiceNumber}</strong><br>
+                    ${timeStr} ص<br>
+                    ${dateStr}<br>
+                    كاشير: ${userData?.fullName || currentUser.email}
+                </div>
+                <table class="inv-table">
+                    <thead>
+                        <tr><th>اسم الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <div class="inv-footer-box">
+                    <div class="f-row"><span class="lbl">حساب الدفع عن طريق: ${payMethodLabel}</span><span class="val"></span></div>
+                    <div class="f-row"><span class="lbl">المدفوع:</span><span class="val">${calc.paidAmount.toLocaleString('en-US')}</span></div>
+                    <div class="f-row"><span class="lbl">خصم %:</span><span class="val">${calc.discountPercent}%</span></div>
+                    <div class="f-row"><span class="lbl">الخصم:</span><span class="val">${calc.discountAmount.toLocaleString('en-US')}</span></div>
+                    <div class="f-row"><span class="lbl">المتبقي:</span><span class="val">${calc.remaining.toLocaleString('en-US')}</span></div>
+                    <div class="f-row"><span class="lbl">ديليفري:</span><span class="val">${calc.deliveryFee.toLocaleString('en-US')}</span></div>
+                    <div class="f-row total-row"><span class="lbl">المجموع:</span><span class="val">${calc.finalTotal.toLocaleString('en-US')}</span></div>
+                </div>
+                <div class="inv-phone">خدمه التوصيل : 01070004717</div>
+                <div class="inv-thanks">شكراً لزيارتكم - BARON</div>
+            </div>`;
 
-// Get saved directory handle from IndexedDB
-async function getSavedDirectoryHandle() {
-    try {
-        const db = await openBaronDB();
-        const tx = db.transaction('directories', 'readonly');
-        const store = tx.objectStore('directories');
-        const result = await store.get('invoice_save_dir');
-        return result || null;
-    } catch (e) {
-        return null;
-    }
-}
-
-// Save directory handle to IndexedDB
-async function saveDirectoryHandle(dirHandle) {
-    const db = await openBaronDB();
-    const tx = db.transaction('directories', 'readwrite');
-    const store = tx.objectStore('directories');
-    await store.put(dirHandle, 'invoice_save_dir');
-}
-
-// Save last used directory from a file handle
-async function saveLastUsedDirectory(fileHandle) {
-    try {
-        // Try to get parent directory - this is tricky with File System Access API
-        // We'll use a separate function to let user pick a default folder
-    } catch (e) {}
-}
-
-// Open IndexedDB
-function openBaronDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open('BaronPOS_v1', 1);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains('directories')) {
-                db.createObjectStore('directories');
-            }
-            if (!db.objectStoreNames.contains('settings')) {
-                db.createObjectStore('settings');
-            }
-        };
-    });
-}
-
-// ========== SET DEFAULT SAVE LOCATION ==========
-window.setDefaultSaveLocation = async () => {
-    try {
-        if (!('showDirectoryPicker' in window)) {
-            alert('المتصفح لا يدعم اختيار المجلد. استخدم Chrome أو Edge.');
-            return;
+            box.innerHTML = invoiceHTML + `
+            <div class="no-print" style="text-align:center;margin-top:15px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                <button class="btn btn-gry" onclick="closeInvoiceModal()">إغلاق</button>
+                <button class="btn btn-drk" onclick="saveInvoiceAsPDF('${invoiceNumber}')"><i class="fas fa-file-pdf"></i> حفظ نسخة PDF</button>
+            </div>`;
+            modal.classList.add('show');
         }
-        
-        const dirHandle = await window.showDirectoryPicker();
-        await saveDirectoryHandle(dirHandle);
-        
-        // Test write permission
-        const perm = await dirHandle.requestPermission({ mode: 'readwrite' });
-        if (perm === 'granted') {
-            alert(`✅ تم حفظ مجلد الحفظ الافتراضي!\n\n📁 المجلد: ${dirHandle.name}\n\nالفواتير القادمة ستحفظ هنا تلقائياً`);
-        } else {
-            alert('⚠️ لم يتم منح صلاحية الكتابة. اختر مجلداً آخر.');
-        }
-    } catch (err) {
-        if (err.name === 'AbortError') return;
-        alert('❌ خطأ: ' + err.message);
-    }
-};
-
-   // ========== AUTO-SAVE TO DEFAULT LOCATION ==========
-window.autoSaveInvoice = async (invoiceNumber, htmlContent) => {
-    const dirHandle = await getSavedDirectoryHandle();
-    if (!dirHandle) return false;
-    
-    try {
-        const perm = await dirHandle.requestPermission({ mode: 'readwrite' });
-        if (perm !== 'granted') return false;
-        
-        const fileName = `BARON_Invoice_${invoiceNumber}_${Date.now()}.html`;
-        const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
-        const writable = await fileHandle.createWritable();
-        await writable.write(new Blob([htmlContent], { type: 'text/html;charset=utf-8' }));
-        await writable.close();
-        
-        return true;
-    } catch (e) {
-        return false;
-    }
-};
-        // ========== EDIT INVOICE FUNCTIONS ==========
+// ========== EDIT INVOICE FUNCTIONS ==========
 let currentEditInvoice = null;
 let currentEditItems = [];
 
@@ -1254,18 +1093,237 @@ window.saveInvoiceEdit = async () => {
 
 // ========== END EDIT INVOICE FUNCTIONS ==========
 
-window.printInvoiceSingle = async () => {
-            const invId = document.querySelector('.invoice-print-wrap')?.id;
-            if (invId) {
-                // Mark as printed in DB
-                const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
-                allInvs.forEach(d => {
-                    setDoc(doc(db, "invoices", d.id), { printed: true, printedAt: serverTimestamp() }, { merge: true });
+
+        // ========== PDF SAVE FUNCTIONS ==========
+
+        // IndexedDB for saving directory handle
+        const DB_NAME = 'BaronPOS_DB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'directories';
+
+        function openBaronDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+            });
+        }
+
+        async function getSavedDirectoryHandle() {
+            try {
+                const db = await openBaronDB();
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                return await new Promise((resolve, reject) => {
+                    const req = store.get('invoice_save_dir');
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => reject(req.error);
                 });
+            } catch (e) {
+                return null;
             }
-            window.print();
+        }
+
+        async function saveDirectoryHandle(dirHandle) {
+            const db = await openBaronDB();
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            await new Promise((resolve, reject) => {
+                const req = store.put(dirHandle, 'invoice_save_dir');
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function clearSavedDirectoryHandle() {
+            try {
+                const db = await openBaronDB();
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                await new Promise((resolve, reject) => {
+                    const req = store.delete('invoice_save_dir');
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+            } catch (e) {}
+        }
+
+        // Build complete HTML document for the invoice
+        function buildInvoiceHTML(invoiceNumber) {
+            const printWrap = document.getElementById('printInvoice');
+            if (!printWrap) return null;
+
+            const cssText = document.querySelector('style')?.innerText || '';
+
+            return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>فاتورة BARON - ${invoiceNumber}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        @page { size: 58mm auto; margin: 0; }
+        body { 
+            margin: 0; 
+            padding: 2mm; 
+            font-family: 'Cairo', 'Arial', sans-serif; 
+            width: 54mm; 
+            direction: rtl; 
+            font-weight: 900;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        ${cssText}
+    </style>
+</head>
+<body>${printWrap.outerHTML}</body>
+</html>`;
+        }
+
+        // Main save function - uses browser's native Print to PDF
+        window.saveInvoiceAsPDF = async (invoiceNumber) => {
+            if (!requirePerm('invoices_print', 'حفظ الفاتورة كـ PDF')) return;
+
+            const btn = event.target.closest('button');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحضير...';
+            btn.disabled = true;
+
+            try {
+                const invoiceHTML = buildInvoiceHTML(invoiceNumber);
+                if (!invoiceHTML) throw new Error('لم يتم العثور على محتوى الفاتورة');
+
+                const suggestedName = `BARON_Invoice_${invoiceNumber}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.pdf`;
+                const pdfBlob = new Blob([invoiceHTML], { type: 'text/html;charset=utf-8' });
+
+                // Try File System Access API first
+                if ('showSaveFilePicker' in window) {
+                    try {
+                        let fileHandle;
+                        const savedDir = await getSavedDirectoryHandle();
+
+                        if (savedDir) {
+                            try {
+                                const perm = await savedDir.requestPermission({ mode: 'readwrite' });
+                                if (perm === 'granted') {
+                                    fileHandle = await savedDir.getFileHandle(suggestedName, { create: true });
+                                }
+                            } catch (e) {
+                                await clearSavedDirectoryHandle();
+                            }
+                        }
+
+                        if (!fileHandle) {
+                            fileHandle = await window.showSaveFilePicker({
+                                suggestedName: suggestedName,
+                                types: [{
+                                    description: 'PDF Document',
+                                    accept: { 'application/pdf': ['.pdf'] }
+                                }]
+                            });
+                        }
+
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(pdfBlob);
+                        await writable.close();
+
+                        alert(`✅ تم حفظ الفاتورة بنجاح!\n\n📄 الملف: ${fileHandle.name}\n\n💡 لفتحه كـ PDF حقيقي:\n1. افتح الملف في المتصفح\n2. اضغط Ctrl+P\n3. اختر "Save as PDF"`);
+
+                        // Mark as saved in DB
+                        const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
+                        allInvs.forEach(d => {
+                            setDoc(doc(db, "invoices", d.id), { 
+                                printed: true, 
+                                printedAt: serverTimestamp(),
+                                savedAsPDF: true,
+                                savedAt: serverTimestamp()
+                            }, { merge: true });
+                        });
+
+                        btn.innerHTML = originalHTML;
+                        btn.disabled = false;
+                        return;
+
+                    } catch (err) {
+                        if (err.name === 'AbortError') {
+                            btn.innerHTML = originalHTML;
+                            btn.disabled = false;
+                            return;
+                        }
+                        console.log('File System API failed, using fallback:', err);
+                    }
+                }
+
+                // Fallback: Open print dialog in new window with auto-print
+                const url = URL.createObjectURL(pdfBlob);
+                const printWindow = window.open(url, '_blank');
+
+                // Auto-trigger print after content loads
+                const checkAndPrint = () => {
+                    if (printWindow.document.readyState === 'complete') {
+                        setTimeout(() => {
+                            printWindow.focus();
+                            printWindow.print();
+                        }, 500);
+                    } else {
+                        setTimeout(checkAndPrint, 100);
+                    }
+                };
+                checkAndPrint();
+
+                // Cleanup
+                setTimeout(() => URL.revokeObjectURL(url), 30000);
+
+                alert('💾 تم فتح الفاتورة في نافذة جديدة\nاضغط "Save as PDF" في حوار الطباعة');
+
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+
+            } catch (e) {
+                console.error('PDF save error:', e);
+                alert('❌ خطأ: ' + e.message);
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
         };
 
+        // Set default save folder
+        window.setDefaultSaveFolder = async () => {
+            if (!('showDirectoryPicker' in window)) {
+                alert('⚠️ هذه الميزة تتطلب Chrome أو Edge أحدث إصدار');
+                return;
+            }
+
+            try {
+                const dirHandle = await window.showDirectoryPicker();
+                const perm = await dirHandle.requestPermission({ mode: 'readwrite' });
+
+                if (perm === 'granted') {
+                    await saveDirectoryHandle(dirHandle);
+                    alert(`✅ تم حفظ مجلد الحفظ الافتراضي!\n\n📁 المجلد: ${dirHandle.name}\n\nالفواتير القادمة ستحفظ هنا تلقائياً`);
+                } else {
+                    alert('❌ يجب منح صلاحية الكتابة للمجلد');
+                }
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                alert('❌ خطأ: ' + err.message);
+            }
+        };
+
+        // Clear saved location
+        window.clearSavedLocation = async () => {
+            await clearSavedDirectoryHandle();
+            alert('✅ تم مسح موقع الحفظ المحفوظ');
+        };
+
+        // Keep old print functions for compatibility
         window.printInvoiceFromModal = async () => {
             if (!requirePerm('invoices_print', 'طباعة الفواتير')) return;
             const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
@@ -1309,12 +1367,12 @@ window.printInvoiceSingle = async () => {
             cartPaymentMethod = inv.paymentMethod || 'cash';
             showInvoice(d.id, inv.invoiceNumber || d.id.slice(-6), inv.items || [], calc);
             setTimeout(() => {
-                window.print();
-                setDoc(doc(db, "invoices", id), { printed: true, printedAt: serverTimestamp() }, { merge: true });
-            }, 600);
+                if (confirm('هل تريد حفظ الفاتورة كـ PDF؟')) {
+                    saveInvoiceAsPDF(inv.invoiceNumber || d.id.slice(-6));
+                }
+            }, 800);
         };
-
-        window.closeInvoiceModal = () => { document.getElementById('invoiceModal').classList.remove('show'); };
+window.closeInvoiceModal = () => { document.getElementById('invoiceModal').classList.remove('show'); };
 
         window.openProductModal = () => {
             if (!requirePerm('products_add', 'إضافة منتج')) return;
@@ -2405,3 +2463,7 @@ window.forceLogout = forceLogout;
 window.enableMaintenanceMode = enableMaintenanceMode;
 window.disableMaintenanceMode = disableMaintenanceMode;
 window.forceLogoutUser = forceLogoutUser;
+window.saveInvoiceAsPDF = saveInvoiceAsPDF;
+window.setDefaultSaveFolder = setDefaultSaveFolder;
+window.clearSavedLocation = clearSavedLocation;
+
