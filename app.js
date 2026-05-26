@@ -1154,132 +1154,83 @@ window.saveInvoiceEdit = async () => {
             } catch (e) {}
         }
 
-        // Load html2pdf.js library dynamically
-        let html2pdfLoaded = false;
-        async function loadHtml2Pdf() {
-            if (html2pdfLoaded) return true;
-            if (typeof html2pdf !== 'undefined') {
-                html2pdfLoaded = true;
-                return true;
-            }
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-                script.onload = () => { html2pdfLoaded = true; resolve(true); };
-                script.onerror = () => reject(new Error('فشل تحميل مكتبة html2pdf.js'));
-                document.head.appendChild(script);
-            });
+        // Build complete HTML document for the invoice
+        function buildInvoiceHTML(invoiceNumber) {
+            const printWrap = document.getElementById('printInvoice');
+            if (!printWrap) return null;
+
+            const cssText = document.querySelector('style')?.innerText || '';
+
+            return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>فاتورة BARON - ${invoiceNumber}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        @page { size: 58mm auto; margin: 0; }
+        body { 
+            margin: 0; 
+            padding: 2mm; 
+            font-family: 'Cairo', 'Arial', sans-serif; 
+            width: 54mm; 
+            direction: rtl; 
+            font-weight: 900;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        ${cssText}
+    </style>
+</head>
+<body>${printWrap.outerHTML}</body>
+</html>`;
         }
 
-        // Generate and save PDF using html2pdf.js
+        // Main save function - uses hidden iframe + window.print() for "Save as PDF"
         window.saveInvoiceAsPDF = async (invoiceNumber) => {
             if (!requirePerm('invoices_print', 'حفظ الفاتورة كـ PDF')) return;
 
             const btn = event.target.closest('button');
             const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري إنشاء PDF...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحضير...';
             btn.disabled = true;
 
             try {
-                // Load library
-                await loadHtml2Pdf();
+                const invoiceHTML = buildInvoiceHTML(invoiceNumber);
+                if (!invoiceHTML) throw new Error('لم يتم العثور على محتوى الفاتورة');
 
-                const printWrap = document.getElementById('printInvoice');
-                if (!printWrap) throw new Error('لم يتم العثور على محتوى الفاتورة');
+                // Create blob URL
+                const blob = new Blob([invoiceHTML], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
 
-                const suggestedName = `BARON_Invoice_${invoiceNumber}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.pdf`;
+                // Create hidden iframe for printing
+                const iframe = document.createElement('iframe');
+                iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+                document.body.appendChild(iframe);
 
-                // Configure html2pdf options for thermal 58mm receipt
-                const opt = {
-                    margin: 0,
-                    filename: suggestedName,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { 
-                        scale: 3,
-                        useCORS: true,
-                        allowTaint: true,
-                        backgroundColor: '#ffffff',
-                        logging: false
-                    },
-                    jsPDF: { 
-                        unit: 'mm', 
-                        format: [58, 200], // 58mm width, auto height
-                        orientation: 'portrait',
-                        hotfixes: ['px_scaling']
-                    }
+                // Wait for iframe to load then trigger print
+                iframe.onload = () => {
+                    setTimeout(() => {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+
+                        // Cleanup after print dialog
+                        setTimeout(() => {
+                            URL.revokeObjectURL(url);
+                            iframe.remove();
+                        }, 1000);
+                    }, 500);
                 };
 
-                // Try File System Access API for native save dialog
-                if ('showSaveFilePicker' in window) {
-                    try {
-                        let fileHandle;
-                        const savedDir = await getSavedDirectoryHandle();
-
-                        if (savedDir) {
-                            try {
-                                const perm = await savedDir.requestPermission({ mode: 'readwrite' });
-                                if (perm === 'granted') {
-                                    fileHandle = await savedDir.getFileHandle(suggestedName, { create: true });
-                                }
-                            } catch (e) {
-                                await clearSavedDirectoryHandle();
-                            }
-                        }
-
-                        if (!fileHandle) {
-                            fileHandle = await window.showSaveFilePicker({
-                                suggestedName: suggestedName,
-                                types: [{
-                                    description: 'PDF Document',
-                                    accept: { 'application/pdf': ['.pdf'] }
-                                }]
-                            });
-                        }
-
-                        // Generate PDF blob using html2pdf
-                        const pdfBlob = await html2pdf().set(opt).from(printWrap).output('blob');
-
-                        // Write to file
-                        const writable = await fileHandle.createWritable();
-                        await writable.write(pdfBlob);
-                        await writable.close();
-
-                        alert(`✅ تم حفظ الفاتورة بنجاح!\n\n📄 الملف: ${fileHandle.name}`);
-
-                        // Mark as saved in DB
-                        const allInvs = await getDocs(query(collection(db, "invoices"), orderBy("createdAt", "desc"), limit(1)));
-                        allInvs.forEach(d => {
-                            setDoc(doc(db, "invoices", d.id), { 
-                                printed: true, 
-                                printedAt: serverTimestamp(),
-                                savedAsPDF: true,
-                                savedAt: serverTimestamp()
-                            }, { merge: true });
-                        });
-
-                        btn.innerHTML = originalHTML;
-                        btn.disabled = false;
-                        return;
-
-                    } catch (err) {
-                        if (err.name === 'AbortError') {
-                            btn.innerHTML = originalHTML;
-                            btn.disabled = false;
-                            return;
-                        }
-                        console.log('File System API failed, using fallback:', err);
-                    }
-                }
-
-                // Fallback: use html2pdf default download
-                await html2pdf().set(opt).from(printWrap).save();
+                iframe.src = url;
 
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
 
             } catch (e) {
                 console.error('PDF save error:', e);
-                alert('❌ خطأ في حفظ PDF: ' + e.message);
+                alert('❌ خطأ: ' + e.message);
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
             }
