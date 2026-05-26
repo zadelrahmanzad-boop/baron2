@@ -1154,12 +1154,26 @@ window.saveInvoiceEdit = async () => {
             } catch (e) {}
         }
 
-        // Build complete HTML document for the invoice
+        // Build complete HTML document for the invoice - EXACT same as modal
         function buildInvoiceHTML(invoiceNumber) {
             const printWrap = document.getElementById('printInvoice');
             if (!printWrap) return null;
 
-            const cssText = document.querySelector('style')?.innerText || '';
+            // Get ALL stylesheets and inline styles
+            let allCSS = '';
+
+            // Get inline styles
+            const styleTags = document.querySelectorAll('style');
+            styleTags.forEach(tag => {
+                allCSS += tag.innerText + '\n';
+            });
+
+            // Get external stylesheets (try to inline them)
+            const linkTags = document.querySelectorAll('link[rel="stylesheet"]');
+            linkTags.forEach(tag => {
+                // For external CSS, we rely on the browser to load them
+                // We'll include the link in the new window
+            });
 
             return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -1167,63 +1181,57 @@ window.saveInvoiceEdit = async () => {
     <meta charset="UTF-8">
     <title>فاتورة BARON - ${invoiceNumber}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @page { size: 58mm auto; margin: 0; }
-        body { 
-            margin: 0; 
-            padding: 2mm; 
-            font-family: 'Cairo', 'Arial', sans-serif; 
-            width: 54mm; 
-            direction: rtl; 
-            font-weight: 900;
-            box-sizing: border-box;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-        ${cssText}
+        ${allCSS}
     </style>
 </head>
-<body>${printWrap.outerHTML}</body>
+<body style="margin:0;padding:0;background:white;">
+    <div style="width:58mm;margin:0 auto;">
+        ${printWrap.outerHTML}
+    </div>
+</body>
 </html>`;
         }
 
-        // Main save function - uses hidden iframe + window.print() for "Save as PDF"
+        // Main save function - opens new window with exact same invoice for print/PDF
         window.saveInvoiceAsPDF = async (invoiceNumber) => {
             if (!requirePerm('invoices_print', 'حفظ الفاتورة كـ PDF')) return;
 
             const btn = event.target.closest('button');
             const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحضير...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري فتح...';
             btn.disabled = true;
 
             try {
                 const invoiceHTML = buildInvoiceHTML(invoiceNumber);
                 if (!invoiceHTML) throw new Error('لم يتم العثور على محتوى الفاتورة');
 
-                // Create blob URL
-                const blob = new Blob([invoiceHTML], { type: 'text/html;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
+                // Open new window with the invoice
+                const printWindow = window.open('', '_blank');
+                if (!printWindow) {
+                    alert('تم حظر النافذة المنبثقة. يرجى السماح بالنوافذ المنبثقة.');
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                    return;
+                }
 
-                // Create hidden iframe for printing
-                const iframe = document.createElement('iframe');
-                iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
-                document.body.appendChild(iframe);
+                printWindow.document.write(invoiceHTML);
+                printWindow.document.close();
 
-                // Wait for iframe to load then trigger print
-                iframe.onload = () => {
+                // Wait for content and fonts to load then print
+                printWindow.onload = () => {
                     setTimeout(() => {
-                        iframe.contentWindow.focus();
-                        iframe.contentWindow.print();
-
-                        // Cleanup after print dialog
-                        setTimeout(() => {
-                            URL.revokeObjectURL(url);
-                            iframe.remove();
-                        }, 1000);
-                    }, 500);
+                        printWindow.focus();
+                        printWindow.print();
+                    }, 800);
                 };
 
-                iframe.src = url;
+                // Fallback if onload doesn't fire
+                setTimeout(() => {
+                    printWindow.focus();
+                    printWindow.print();
+                }, 1000);
 
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
