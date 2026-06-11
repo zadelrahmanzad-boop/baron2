@@ -22,6 +22,13 @@ let currentFilter = 'all';
 let cartPaymentMethod = 'cash';
 let isMonitorOnly = false;
 
+function withTimeout(promise, ms = 15000, errorMsg = 'انتهى وقت الانتظار - تحقق من الاتصال') {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error(errorMsg)), ms))
+    ]);
+}
+
 const DEFAULT_PERMS = { 
     pos: true, pos_sell: true, 
     products: true, products_add: true, products_edit: true, products_delete: true,
@@ -422,7 +429,7 @@ window.switchUserTab = (tab) => {
 
 async function loadCategories() {
     try {
-        const snap = await getDocs(collection(db, "products"));
+        const snap = await withTimeout(getDocs(collection(db, "products")), 15000, 'انتهى وقت الانتظار');
         const cats = new Set(productCategories);
         snap.forEach(d => { const c = d.data().category; if (c) cats.add(c); });
         productCategories = Array.from(cats);
@@ -471,9 +478,13 @@ function getCategoryIcon(cat) { return CAT_ICONS[cat] || { icon: 'fa-utensils', 
 
 async function loadPosProducts() {
     const box = document.getElementById('posProducts');
+    if (!box) {
+        console.error('loadPosProducts: posProducts element not found in DOM');
+        return;
+    }
     box.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;"><div class="spin"></div><p style="color:#aaa;margin-top:15px;">جاري التحميل...</p></div>';
     try {
-        const snap = await getDocs(collection(db, "products"));
+        const snap = await withTimeout(getDocs(collection(db, "products")), 15000, 'انتهى وقت الانتظار - تحقق من الاتصال بالإنترنت');
         allProducts = [];
         if (snap.empty) {
             const defaults = [
@@ -488,11 +499,22 @@ async function loadPosProducts() {
                 { code: "#1037", name: "تشكن تشيز برجر", price: 150, category: "برجر" },
                 { code: "#1038", name: "بيف تشيز برجر", price: 150, category: "برجر" }
             ];
-            for (const p of defaults) await addDoc(collection(db, "products"), { ...p, createdAt: serverTimestamp() });
-            await loadPosProducts();
-            return;
+            let addedCount = 0;
+            for (const p of defaults) {
+                try {
+                    await addDoc(collection(db, "products"), { ...p, createdAt: serverTimestamp() });
+                    addedCount++;
+                } catch (addErr) {
+                    console.warn('Failed to add default product:', p.name, addErr.message);
+                }
+            }
+            if (addedCount > 0) {
+                const snap2 = await withTimeout(getDocs(collection(db, "products")), 15000, 'انتهى وقت الانتظار');
+                snap2.forEach(d => { const p = d.data(); p.id = d.id; allProducts.push(p); });
+            }
+        } else {
+            snap.forEach(d => { const p = d.data(); p.id = d.id; allProducts.push(p); });
         }
-        snap.forEach(d => { const p = d.data(); p.id = d.id; allProducts.push(p); });
         currentSearchQuery = '';
         const searchInput = document.getElementById('productSearch');
         if (searchInput) searchInput.value = '';
@@ -500,7 +522,11 @@ async function loadPosProducts() {
         renderProductsGrid();
     } catch (e) {
         console.error('loadPosProducts error:', e);
-        box.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#aaa;"><i class="fas fa-exclamation-circle" style="font-size:40px;margin-bottom:10px;"></i><p>خطأ في تحميل المنتجات</p></div>';
+        const errorMsg = e.message || 'خطأ في تحميل المنتجات';
+        const isTimeout = errorMsg.includes('انتهى وقت') || errorMsg.includes('timeout');
+        const icon = isTimeout ? 'fa-wifi' : 'fa-exclamation-circle';
+        const color = isTimeout ? 'var(--warning)' : 'var(--danger)';
+        box.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#aaa;"><i class="fas ${icon}" style="font-size:40px;margin-bottom:10px;color:${color};"></i><p>${errorMsg}</p><button class="btn btn-main" style="margin-top:15px;padding:8px 20px;border-radius:8px;" onclick="loadPosProducts()"><i class="fas fa-redo"></i> إعادة المحاولة</button></div>`;
     }
 }
 
@@ -1040,9 +1066,13 @@ window.saveProduct = async () => {
 
 async function loadProductsTable() {
     const tbody = document.getElementById('productsBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="spin"></div></td></tr>';
+    if (!tbody) {
+        console.error('loadProductsTable: productsBody element not found in DOM');
+        return;
+    }
+    tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="spin"></div><p style="margin-top:10px;color:#aaa;">جاري التحميل...</p></td></tr>';
     try {
-        const snap = await getDocs(collection(db, "products"));
+        const snap = await withTimeout(getDocs(collection(db, "products")), 15000, 'انتهى وقت الانتظار');
         if (snap.empty) { tbody.innerHTML = '<tr><td colspan="6" class="empty"><i class="fas fa-utensils"></i><p>لا توجد منتجات</p></td></tr>'; return; }
         let html = '';
         snap.forEach(d => {
@@ -1053,7 +1083,11 @@ async function loadProductsTable() {
             html += `<tr><td><strong>${p.code || '-'}</strong></td><td><strong>${p.name}</strong></td><td style="color:var(--primary);font-weight:800;">${p.price} ج.م</td><td>${p.category || '-'}</td><td><span class="tag tag-grn">متاح</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap;">${actions}</div></td></tr>`;
         });
         tbody.innerHTML = html;
-    } catch (e) { tbody.innerHTML = '<tr><td colspan="6" class="empty">خطأ</td></tr>'; }
+    } catch (e) {
+        console.error('loadProductsTable error:', e);
+        const errorMsg = e.message || 'خطأ في تحميل المنتجات';
+        tbody.innerHTML = `<tr><td colspan="6" class="empty"><i class="fas fa-exclamation-circle" style="font-size:30px;color:var(--danger);margin-bottom:8px;display:block;"></i><p>${errorMsg}</p><button class="btn btn-main" style="margin-top:10px;" onclick="loadProductsTable()"><i class="fas fa-redo"></i> إعادة المحاولة</button></td></tr>`;
+    }
 }
 
 window.deleteProduct = async (id) => {
@@ -1521,10 +1555,12 @@ window.deleteUser = async (id) => {
 
 async function loadStats() {
     try {
-        const prodSnap = await getDocs(collection(db, "products"));
-        document.getElementById('stProducts').textContent = prodSnap.size;
-        const invSnap = await getDocs(collection(db, "invoices"));
-        document.getElementById('stInvoices').textContent = invSnap.size;
+        const prodSnap = await withTimeout(getDocs(collection(db, "products")), 15000, 'انتهى وقت الانتظار');
+        const stProducts = document.getElementById('stProducts');
+        if (stProducts) stProducts.textContent = prodSnap.size;
+        const invSnap = await withTimeout(getDocs(collection(db, "invoices")), 15000, 'انتهى وقت الانتظار');
+        const stInvoices = document.getElementById('stInvoices');
+        if (stInvoices) stInvoices.textContent = invSnap.size;
         const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
         let todaySales = 0, todayRevenue = 0;
         invSnap.forEach(d => {
@@ -1533,13 +1569,19 @@ async function loadStats() {
                 if (inv.createdAt.toDate() >= todayStart) { todaySales++; todayRevenue += inv.total || 0; }
             }
         });
-        document.getElementById('stSales').textContent = todaySales;
-        document.getElementById('stRevenue').textContent = todayRevenue.toLocaleString('ar-EG') + ' ج.م';
-        document.getElementById('repStSales').textContent = todaySales;
-        document.getElementById('repStRevenue').textContent = todayRevenue.toLocaleString('ar-EG') + ' ج.م';
-        document.getElementById('repStProducts').textContent = prodSnap.size;
-        document.getElementById('repStInvoices').textContent = invSnap.size;
-    } catch (e) { }
+        const stSales = document.getElementById('stSales');
+        const stRevenue = document.getElementById('stRevenue');
+        const repStSales = document.getElementById('repStSales');
+        const repStRevenue = document.getElementById('repStRevenue');
+        const repStProducts = document.getElementById('repStProducts');
+        const repStInvoices = document.getElementById('repStInvoices');
+        if (stSales) stSales.textContent = todaySales;
+        if (stRevenue) stRevenue.textContent = todayRevenue.toLocaleString('ar-EG') + ' ج.م';
+        if (repStSales) repStSales.textContent = todaySales;
+        if (repStRevenue) repStRevenue.textContent = todayRevenue.toLocaleString('ar-EG') + ' ج.م';
+        if (repStProducts) repStProducts.textContent = prodSnap.size;
+        if (repStInvoices) repStInvoices.textContent = invSnap.size;
+    } catch (e) { console.error('loadStats error:', e); }
 }
 
 let pendingUnsub = null;
