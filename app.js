@@ -810,10 +810,10 @@ function showInvoice(invId, invoiceNumber, items, calc) {
     const invoiceHTML = `
     <div class="invoice-print-wrap" id="printInvoice">
         <div class="inv-header">
-            <div class="logo-text">BARON</div>
+            <div class="logo-text">الحلوانى</div>
             <div class="sub-text">DONE WITH LOVE</div>
             <div class="inv-logo">
-                <img src="${LOGO_URL}" alt="BARON" onerror="this.style.display='none'" style="width:100%;max-width:58mm;height:auto;margin:2px auto;display:block;">
+                <img src="${LOGO_URL}" alt="الحلوانى" onerror="this.style.display='none'" style="width:100%;max-width:58mm;height:auto;margin:2px auto;display:block;">
             </div>
         </div>
         <div class="inv-meta">
@@ -835,8 +835,8 @@ function showInvoice(invId, invoiceNumber, items, calc) {
             <div class="f-row"><span class="lbl">ديليفري:</span><span class="val">${calc.deliveryFee.toLocaleString('en-US')}</span></div>
             <div class="f-row total-row"><span class="lbl">المجموع:</span><span class="val">${calc.finalTotal.toLocaleString('en-US')}</span></div>
         </div>
-        <div class="inv-phone">خدمه التوصيل : 01070004717</div>
-        <div class="inv-thanks">شكراً لزيارتكم - BARON</div>
+        <div class="inv-phone">خدمه التوصيل : 01000000000</div>
+        <div class="inv-thanks">شكراً لزيارتكم - الحلوانى</div>
     </div>`;
     box.innerHTML = invoiceHTML + `
     <div class="no-print" style="text-align:center;margin-top:15px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
@@ -1770,7 +1770,7 @@ window.exportSelectedToPDF = async () => {
         return `<tr><td>${idx + 1}</td><td>#${inv.invoiceNumber || inv.id.slice(-6)}</td><td>${date}</td><td>${inv.itemCount || 0}</td><td>${inv.total || 0} ج.م</td><td>${inv.cashierName || '-'}</td></tr>`;
     }).join('');
     const w = window.open('', '_blank');
-    w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>فواتير BARON</title><style>@page { size: A4; margin: 15mm; } body { font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; } h2 { text-align: center; margin-bottom: 20px; } table { width: 100%; border-collapse: collapse; margin-top: 15px; } th { background: #1a1a2e; color: white; padding: 10px; text-align: right; } td { padding: 10px; border-bottom: 1px solid #ddd; text-align: right; } tr:nth-child(even) { background: #f8f9fa; } .summary { margin-top: 20px; text-align: left; font-size: 18px; font-weight: bold; }</style></head><body><h2>تقرير الفواتير المحددة - الحلوانى</h2><p>تاريخ التصدير: ${new Date().toLocaleString('ar-EG')}</p><p>عدد الفواتير: ${invoices.length}</p><table><thead><tr><th>#</th><th>رقم الفاتورة</th><th>التاريخ</th><th>العناصر</th><th>الإجمالي</th><th>الكاشير</th></tr></thead><tbody>${rows}</tbody></table><div class="summary">الإجمالي الكلي: ${invoices.reduce((s, i) => s + (i.total || 0), 0).toLocaleString('ar-EG')} ج.م</div></body></html>`);
+    w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>فواتير الحلوانى</title><style>@page { size: A4; margin: 15mm; } body { font-family: 'Cairo', sans-serif; direction: rtl; padding: 20px; } h2 { text-align: center; margin-bottom: 20px; } table { width: 100%; border-collapse: collapse; margin-top: 15px; } th { background: #1a1a2e; color: white; padding: 10px; text-align: right; } td { padding: 10px; border-bottom: 1px solid #ddd; text-align: right; } tr:nth-child(even) { background: #f8f9fa; } .summary { margin-top: 20px; text-align: left; font-size: 18px; font-weight: bold; }</style></head><body><h2>تقرير الفواتير المحددة - الحلوانى</h2><p>تاريخ التصدير: ${new Date().toLocaleString('ar-EG')}</p><p>عدد الفواتير: ${invoices.length}</p><table><thead><tr><th>#</th><th>رقم الفاتورة</th><th>التاريخ</th><th>العناصر</th><th>الإجمالي</th><th>الكاشير</th></tr></thead><tbody>${rows}</tbody></table><div class="summary">الإجمالي الكلي: ${invoices.reduce((s, i) => s + (i.total || 0), 0).toLocaleString('ar-EG')} ج.م</div></body></html>`);
     w.document.close();
     setTimeout(() => { w.focus(); w.print(); }, 600);
 };
