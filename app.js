@@ -1503,11 +1503,15 @@ async function loadUsersTable() {
 
 async function loadLoginLog() {
     const tbody = document.getElementById('loginLogBody');
-    tbody.innerHTML = '<tr><td colspan="8" class="empty"><div class="spin"></div></td></tr>';
+    if (!tbody) {
+        console.error('loadLoginLog: loginLogBody element not found in DOM');
+        return;
+    }
+    tbody.innerHTML = '<tr><td colspan="9" class="empty"><div class="spin"></div><p style="margin-top:10px;color:#aaa;">جاري التحميل...</p></td></tr>';
     try {
         const q = query(collection(db, "login_log"), orderBy("loginAt", "desc"), limit(200));
-        const snap = await getDocs(q);
-        if (snap.empty) { tbody.innerHTML = '<tr><td colspan="8" class="empty"><i class="fas fa-clipboard-list"></i><p>لا توجد سجلات</p></td></tr>'; return; }
+        const snap = await withTimeout(getDocs(q), 15000, 'انتهى وقت الانتظار');
+        if (snap.empty) { tbody.innerHTML = '<tr><td colspan="9" class="empty"><i class="fas fa-clipboard-list"></i><p>لا توجد سجلات</p></td></tr>'; return; }
         let html = '', count = 0;
         snap.forEach(d => {
             count++;
@@ -1523,10 +1527,14 @@ async function loadLoginLog() {
                 duration = h > 0 ? `${h}س ${m}د` : `${m}د`;
             } else if (l.sessionDuration) duration = l.sessionDuration;
             const typeBadge = l.type === 'login' ? '<span class="login-badge login-in"><i class="fas fa-sign-in-alt"></i> دخول</span>' : '<span class="login-badge login-out"><i class="fas fa-sign-out-alt"></i> خروج</span>';
-            html += `<tr><td>${count}</td><td><strong>${l.userName || '-'}</strong></td><td>${l.userEmail || '-'}</td><td>${typeBadge}</td><td>${loginTime}</td><td>${logoutTime}</td><td style="font-weight:800;color:var(--info);">${duration}</td><td style="font-size:11px;color:#888;">${l.userAgent || '-'}</td></tr>`;
+            html += `<tr><td style="text-align:center;"><input type="checkbox" class="log-select" value="${d.id}"></td><td>${count}</td><td><strong>${l.userName || '-'}</strong></td><td>${l.userEmail || '-'}</td><td>${typeBadge}</td><td>${loginTime}</td><td>${logoutTime}</td><td style="font-weight:800;color:var(--info);">${duration}</td><td style="font-size:11px;color:#888;">${l.userAgent || '-'}</td></tr>`;
         });
         tbody.innerHTML = html;
-    } catch (e) { tbody.innerHTML = '<tr><td colspan="8" class="empty">خطأ</td></tr>'; }
+    } catch (e) {
+        console.error('loadLoginLog error:', e);
+        const errorMsg = e.message || 'خطأ في تحميل السجلات';
+        tbody.innerHTML = `<tr><td colspan="9" class="empty"><i class="fas fa-exclamation-circle" style="font-size:30px;color:var(--danger);margin-bottom:8px;display:block;"></i><p>${errorMsg}</p><button class="btn btn-main" style="margin-top:10px;" onclick="loadLoginLog()"><i class="fas fa-redo"></i> إعادة المحاولة</button></td></tr>`;
+    }
 }
 
 window.extendUser = async (uid) => {
@@ -1838,7 +1846,42 @@ window.autoPrintDouble = async () => {
     setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => iframe.remove(), 3000); }, 600);
 };
 
+window.toggleSelectAllLogs = () => {
+    const topCb = document.getElementById('selectAllLog');
+    const headerCb = document.getElementById('selectAllLogHeader');
+    let checked;
+    if (event && event.target) {
+        checked = event.target.checked;
+        if (event.target === topCb && headerCb) headerCb.checked = checked;
+        else if (event.target === headerCb && topCb) topCb.checked = checked;
+    } else {
+        checked = topCb ? topCb.checked : (headerCb ? headerCb.checked : false);
+    }
+    document.querySelectorAll('.log-select').forEach(cb => cb.checked = checked);
+};
+
+window.getSelectedLogs = () => Array.from(document.querySelectorAll('.log-select:checked')).map(cb => cb.value);
+
+window.deleteSelectedLogs = async () => {
+    const ids = getSelectedLogs();
+    if (ids.length === 0) { alert('اختر سجلات أولاً'); return; }
+    if (!isAdmin) { alert('للمدير فقط'); return; }
+    if (!confirm(`هل أنت متأكد من حذف ${ids.length} سجل؟ لا يمكن التراجع!`)) return;
+    try {
+        let deleted = 0;
+        for (const id of ids) {
+            await deleteDoc(doc(db, "login_log", id));
+            deleted++;
+        }
+        alert(`تم حذف ${deleted} سجل بنجاح`);
+        loadLoginLog();
+    } catch (e) { alert('خطأ في الحذف: ' + e.message); }
+};
+
 window.toggleSidebar = toggleSidebar;
+window.toggleSelectAllLogs = toggleSelectAllLogs;
+window.getSelectedLogs = getSelectedLogs;
+window.deleteSelectedLogs = deleteSelectedLogs;
 window.navTo = navTo;
 window.loadPosProducts = loadPosProducts;
 window.filterProducts = filterProducts;

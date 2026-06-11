@@ -247,16 +247,21 @@
                 </div>
                 <div id="panel-log" class="hidden">
                     <div class="card">
-                        <div class="card-head">
+                        <div class="card-head" style="flex-wrap:wrap;gap:12px;">
                             <h3>سجل الدخول والخروج</h3>
-                            <div class="btns">
+                            <div class="btns" style="flex-wrap:wrap;gap:8px;">
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:700;color:#444;">
+                                    <input type="checkbox" id="selectAllLog" onchange="toggleSelectAllLogs()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary);"> تحديد الكل
+                                </label>
+                                <button class="btn btn-red" onclick="deleteSelectedLogs()"><i class="fas fa-trash"></i> مسح المحدد</button>
+                                <div style="width:1px;height:24px;background:#ddd;margin:0 4px;"></div>
                                 <button class="btn btn-sec" onclick="loadLoginLog()"><i class="fas fa-sync-alt"></i> تحديث</button>
                                 <button class="btn btn-gry" onclick="printLoginLog()"><i class="fas fa-print"></i> طباعة</button>
                             </div>
                         </div>
                         <table>
-                            <thead><tr><th>#</th><th>المستخدم</th><th>البريد</th><th>نوع العملية</th><th>وقت الدخول</th><th>وقت الخروج</th><th>مدة الجلسة</th><th>الجهاز / IP</th></tr></thead>
-                            <tbody id="loginLogBody"><tr><td colspan="8" class="empty"><div class="spin"></div></td></tr></tbody>
+                            <thead><tr><th style="width:30px;text-align:center;"><input type="checkbox" id="selectAllLogHeader" onchange="toggleSelectAllLogs()"></th><th>#</th><th>المستخدم</th><th>البريد</th><th>نوع العملية</th><th>وقت الدخول</th><th>وقت الخروج</th><th>مدة الجلسة</th><th>الجهاز / IP</th></tr></thead>
+                            <tbody id="loginLogBody"><tr><td colspan="9" class="empty"><div class="spin"></div></td></tr></tbody>
                         </table>
                     </div>
                 </div>
