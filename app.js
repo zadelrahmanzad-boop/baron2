@@ -69,7 +69,7 @@ const CAT_ICONS = {
 };
 const LOGO_URL = "https://raw.githubusercontent.com/zadelrahmanzad-boop/baron2/refs/heads/main/EL.jpg";
 
-// ========== URL SECTION AUTO-OPEN ==========
+/* ========== URL AUTO-NAVIGATE ========== */
 function checkUrlAndNavigate() {
     const params = new URLSearchParams(window.location.search);
     const sec = params.get('section');
@@ -150,7 +150,7 @@ onAuthStateChanged(auth, async (user) => {
     loadStats();
     loadCategories();
     listenPendingBadge();
-    // Auto-navigate based on URL after everything is ready
+    /* ===== AUTO-NAVIGATE AFTER EVERYTHING LOADS ===== */
     checkUrlAndNavigate();
 });
 
@@ -682,8 +682,7 @@ function renderCart() {
     let html = '';
     cart.forEach(item => {
         const itemTotal = item.price * item.qty;
-        const noteLines = item.note ? item.note.toString().split(/
-|/).map(l => l.trim()).filter(l => l) : [];
+        const noteLines = item.note ? item.note.toString().split(/\n|\r/).map(l => l.trim()).filter(l => l) : [];
         const noteDisplay = noteLines.length ? `<div style="font-size:11px;color:var(--warning);margin-top:2px;font-weight:700;line-height:1.4;">${noteLines.map(l => `<div><i class="fas fa-sticky-note" style="font-size:9px;margin-left:3px;"></i> ${l}</div>`).join('')}</div>` : '';
         html += `<div class="cart-item" style="align-items:flex-start;"><div class="cart-item-info" style="flex:1;"><div class="cart-item-name">${item.name}</div><div class="cart-item-price">${item.price} ج.م × ${item.qty}</div>${noteDisplay}</div><div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin:0 8px;"><div class="cart-qty"><button onclick="changeQty('${item.id}', -1)">−</button><span>${item.qty}</span><button onclick="changeQty('${item.id}', 1)">+</button></div><button class="btn btn-warn" style="padding:3px 8px;font-size:11px;" onclick="addNoteToCartItem('${item.id}')" title="إضافة ملاحظة"><i class="fas fa-sticky-note"></i></button></div><div style="font-weight:800;min-width:60px;text-align:left;margin-top:4px;">${itemTotal} ج.م</div><button class="btn btn-red" style="padding:4px 8px;margin-right:6px;margin-top:4px;" onclick="removeFromCart('${item.id}')"><i class="fas fa-times"></i></button></div>`;
     });
@@ -774,8 +773,7 @@ function showInvoice(invId, invoiceNumber, items, calc) {
         const noteText = (i.note || '').toString().trim();
         let noteRow = '';
         if (noteText) {
-            const noteLines = noteText.split(/
-|/).map(l => l.trim()).filter(l => l);
+            const noteLines = noteText.split(/\n|\r/).map(l => l.trim()).filter(l => l);
             if (noteLines.length > 0) {
                 const noteHtml = noteLines.map(line => `<div>${line}</div>`).join('');
                 noteRow = `<tr class="note-row"><td colspan="4"><i class="fas fa-sticky-note" style="color:#d68910;margin-left:4px;"></i> ${noteHtml}</td></tr>`;
@@ -1245,7 +1243,6 @@ async function loadReports() {
             html += `<tr style="background:#f8f9fa;font-weight:800;border-top:2px solid var(--dark);"><td>الإجمالي</td><td>${filteredCount}</td><td style="color:var(--primary);">${filteredTotal.toLocaleString('ar-EG')} ج.م</td><td>${filteredCount > 0 ? Math.round(filteredTotal / filteredCount).toLocaleString('ar-EG') : 0} ج.م</td></tr>`;
             dailyBody.innerHTML = html;
         }
-        // Update report stats from the same data
         document.getElementById('repStSales').textContent = filteredCount;
         document.getElementById('repStRevenue').textContent = filteredTotal.toLocaleString('ar-EG') + ' ج.م';
         document.getElementById('repStProducts').textContent = allProducts.length;
@@ -1748,11 +1745,7 @@ window.connectQZ = async () => {
     } catch (e) {
         updateQZStatus('فشل: ' + e.message, 'var(--danger)');
         btn.disabled = false; btn.innerHTML = '<i class="fas fa-plug"></i> إعادة توصيل';
-        alert('مش قادر أتواصل مع QZ Tray.
-
-1. تأكد إن البرنامج شغال على الجهاز
-2. جرّب تفتحه كـ Administrator
-3. لو مش مثبّت: https://qz.io');
+        alert('مش قادر أتواصل مع QZ Tray.\n\n1. تأكد إن البرنامج شغال على الجهاز\n2. جرّب تفتحه كـ Administrator\n3. لو مش مثبّت: https://qz.io');
     }
 };
 function updateQZStatus(text, color) { const el = document.getElementById('qzStatus'); el.textContent = text; el.style.color = color || '#888'; }
