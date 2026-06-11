@@ -15,7 +15,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let currentUser = null, userData = null, isAdmin = false, cart = [], allProducts = [];
-let productCategories = ["تشكن", "برجر", "سايدز", "مشروبات", "أخرى"];
+let productCategories = [];
 let currentSessionId = null;
 let maintenanceUnsub = null;
 let currentFilter = 'all';
