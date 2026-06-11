@@ -69,6 +69,19 @@ const CAT_ICONS = {
 };
 const LOGO_URL = "https://raw.githubusercontent.com/zadelrahmanzad-boop/baron2/refs/heads/main/EL.jpg";
 
+// ========== URL SECTION AUTO-OPEN ==========
+function checkUrlAndNavigate() {
+    const params = new URLSearchParams(window.location.search);
+    const sec = params.get('section');
+    if (sec && ['pos','products','invoices','reports','users'].includes(sec)) {
+        navTo(sec);
+    }
+    if (sec === 'pending') {
+        navTo('pos');
+        setTimeout(() => openPendingModal(), 500);
+    }
+}
+
 onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/"; return; }
     currentUser = user;
@@ -137,6 +150,8 @@ onAuthStateChanged(auth, async (user) => {
     loadStats();
     loadCategories();
     listenPendingBadge();
+    // Auto-navigate based on URL after everything is ready
+    checkUrlAndNavigate();
 });
 
 async function recordLogin(uid) {
@@ -1230,10 +1245,11 @@ async function loadReports() {
             html += `<tr style="background:#f8f9fa;font-weight:800;border-top:2px solid var(--dark);"><td>الإجمالي</td><td>${filteredCount}</td><td style="color:var(--primary);">${filteredTotal.toLocaleString('ar-EG')} ج.م</td><td>${filteredCount > 0 ? Math.round(filteredTotal / filteredCount).toLocaleString('ar-EG') : 0} ج.م</td></tr>`;
             dailyBody.innerHTML = html;
         }
-        document.getElementById('repStSales').textContent = todaySales;
-        document.getElementById('repStRevenue').textContent = todayRevenue.toLocaleString('ar-EG') + ' ج.م';
+        // Update report stats from the same data
+        document.getElementById('repStSales').textContent = filteredCount;
+        document.getElementById('repStRevenue').textContent = filteredTotal.toLocaleString('ar-EG') + ' ج.م';
         document.getElementById('repStProducts').textContent = allProducts.length;
-        document.getElementById('repStInvoices').textContent = invSnap.size;
+        document.getElementById('repStInvoices').textContent = snap.size;
     } catch (e) { console.error(e); }
 }
 
@@ -1877,28 +1893,3 @@ window.forceLogout = forceLogout;
 window.enableMaintenanceMode = enableMaintenanceMode;
 window.disableMaintenanceMode = disableMaintenanceMode;
 window.forceLogoutUser = forceLogoutUser;
-
-// ========== AUTO-OPEN SECTION FROM URL ==========
-window.addEventListener('DOMContentLoaded', () => {
-  const params = new URLSearchParams(window.location.search);
-  const sec = params.get('section');
-  if (sec && ['pos','products','invoices','reports','users'].includes(sec)) {
-    const tryNav = setInterval(() => {
-      if (currentUser && document.getElementById('view-' + sec)) {
-        clearInterval(tryNav);
-        navTo(sec);
-      }
-    }, 300);
-    setTimeout(() => clearInterval(tryNav), 10000);
-  }
-  if (sec === 'pending') {
-    const tryPending = setInterval(() => {
-      if (currentUser && document.getElementById('view-pos')) {
-        clearInterval(tryPending);
-        navTo('pos');
-        setTimeout(() => openPendingModal(), 400);
-      }
-    }, 300);
-    setTimeout(() => clearInterval(tryPending), 10000);
-  }
-});
