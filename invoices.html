@@ -1,20 +1,37 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>الفواتير - BARON POS</title>
-  <link rel="icon" href="EL.jpg">
-  <script>window.location.replace('index.html?section=invoices');</script>
-  <style>
-    body { background: #0f172a; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; padding-top: 30vh; margin: 0; }
-    .loader { width: 48px; height: 48px; border: 4px solid #f59e0b; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
-    @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    p { margin-top: 20px; font-size: 18px; color: #94a3b8; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الفواتير - BARON POS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="EL.jpg">
 </head>
 <body>
-  <span class="loader"></span>
-  <p>جاري فتح الفواتير...</p>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        const app = initializeApp({
+            apiKey: "AIzaSyDf_FZ5dDhJCYag9EpEblgylTrxber7oks",
+            authDomain: "cashier-52332.firebaseapp.com",
+            projectId: "cashier-52332",
+            storageBucket: "cashier-52332.firebasestorage.app",
+            messagingSenderId: "708122460779",
+            appId: "1:708122460779:web:5c0fb2f36488aa6ae3272e",
+            measurementId: "G-8BLM2L0LN5"
+        });
+        const auth = getAuth(app);
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { window.location.href = "https://zadelrahmanzad-boop.github.io/baron1/"; return; }
+            window.location.href = "index.html?section=invoices";
+        });
+    </script>
+    <div style="background:#0f172a;color:#fff;font-family:'Cairo',sans-serif;text-align:center;padding-top:30vh;height:100vh;margin:0;">
+        <div style="width:48px;height:48px;border:4px solid #f59e0b;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:spin 1s linear infinite;"></div>
+        <p style="margin-top:20px;font-size:18px;color:#94a3b8;">جاري فتح الفواتير...</p>
+    </div>
+    <style>@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}</style>
 </body>
 </html>
