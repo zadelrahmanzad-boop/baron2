@@ -2245,3 +2245,27 @@ window.forceLogout = forceLogout;
 window.enableMaintenanceMode = enableMaintenanceMode;
 window.disableMaintenanceMode = disableMaintenanceMode;
 window.forceLogoutUser = forceLogoutUser;
+// ========== AUTO-OPEN SECTION FROM URL ==========
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const sec = params.get('section');
+  if (sec && ['pos','products','invoices','reports','users'].includes(sec)) {
+    const tryNav = setInterval(() => {
+      if (currentUser && document.getElementById('view-' + sec)) {
+        clearInterval(tryNav);
+        navTo(sec);
+      }
+    }, 300);
+    setTimeout(() => clearInterval(tryNav), 10000);
+  }
+  if (sec === 'pending') {
+    const tryPending = setInterval(() => {
+      if (currentUser && document.getElementById('view-pos')) {
+        clearInterval(tryPending);
+        navTo('pos');
+        setTimeout(() => openPendingModal(), 400);
+      }
+    }, 300);
+    setTimeout(() => clearInterval(tryPending), 10000);
+  }
+});
