@@ -149,16 +149,21 @@
             <!-- PRODUCTS SECTION -->
             <div class="section-view" id="view-products">
                 <div class="card">
-                    <div class="card-head">
+                    <div class="card-head" style="flex-wrap:wrap;gap:12px;">
                         <h3>جدول المنتجات</h3>
-                        <div class="btns">
+                        <div class="btns" style="flex-wrap:wrap;gap:8px;">
+                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:700;color:#444;">
+                                <input type="checkbox" id="selectAllProdTop" onchange="toggleSelectAllProducts()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary);"> تحديد الكل
+                            </label>
+                            <button class="btn btn-red" onclick="deleteSelectedProducts()"><i class="fas fa-trash"></i> حذف المحدد</button>
+                            <div style="width:1px;height:24px;background:#ddd;margin:0 4px;"></div>
                             <button class="btn btn-sec" onclick="loadProductsTable()"><i class="fas fa-sync-alt"></i> تحديث</button>
                             <button class="btn btn-main" id="btnAddProduct" onclick="openProductModal()" style="display:none;"><i class="fas fa-plus"></i> منتج جديد</button>
                         </div>
                     </div>
                     <table>
-                        <thead><tr><th>الكود</th><th>اسم المنتج</th><th>السعر</th><th>الفئة</th><th>الحالة</th><th>إجراءات</th></tr></thead>
-                        <tbody id="productsBody"><tr><td colspan="6" class="empty"><div class="spin"></div></td></tr></tbody>
+                        <thead><tr><th style="width:30px;text-align:center;"><input type="checkbox" id="selectAllProd" onchange="toggleSelectAllProducts()"></th><th>الكود</th><th>اسم المنتج</th><th>السعر</th><th>الفئة</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+                        <tbody id="productsBody"><tr><td colspan="7" class="empty"><div class="spin"></div></td></tr></tbody>
                     </table>
                 </div>
             </div>

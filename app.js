@@ -1070,23 +1070,23 @@ async function loadProductsTable() {
         console.error('loadProductsTable: productsBody element not found in DOM');
         return;
     }
-    tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="spin"></div><p style="margin-top:10px;color:#aaa;">جاري التحميل...</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty"><div class="spin"></div><p style="margin-top:10px;color:#aaa;">جاري التحميل...</p></td></tr>';
     try {
         const snap = await withTimeout(getDocs(collection(db, "products")), 15000, 'انتهى وقت الانتظار');
-        if (snap.empty) { tbody.innerHTML = '<tr><td colspan="6" class="empty"><i class="fas fa-utensils"></i><p>لا توجد منتجات</p></td></tr>'; return; }
+        if (snap.empty) { tbody.innerHTML = '<tr><td colspan="7" class="empty"><i class="fas fa-utensils"></i><p>لا توجد منتجات</p></td></tr>'; return; }
         let html = '';
         snap.forEach(d => {
             const p = d.data();
             let actions = '';
             if (isAdmin || checkPerm('products_edit')) actions += `<button class="btn btn-sec" onclick="editProduct('${d.id}')" style="padding:5px 10px;"><i class="fas fa-edit"></i></button>`;
             if (isAdmin || checkPerm('products_delete')) actions += `<button class="btn btn-red" onclick="deleteProduct('${d.id}')" style="padding:5px 10px;"><i class="fas fa-trash"></i></button>`;
-            html += `<tr><td><strong>${p.code || '-'}</strong></td><td><strong>${p.name}</strong></td><td style="color:var(--primary);font-weight:800;">${p.price} ج.م</td><td>${p.category || '-'}</td><td><span class="tag tag-grn">متاح</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap;">${actions}</div></td></tr>`;
+            html += `<tr><td style="text-align:center;"><input type="checkbox" class="prod-select" value="${d.id}"></td><td><strong>${p.code || '-'}</strong></td><td><strong>${p.name}</strong></td><td style="color:var(--primary);font-weight:800;">${p.price} ج.م</td><td>${p.category || '-'}</td><td><span class="tag tag-grn">متاح</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap;">${actions}</div></td></tr>`;
         });
         tbody.innerHTML = html;
     } catch (e) {
         console.error('loadProductsTable error:', e);
         const errorMsg = e.message || 'خطأ في تحميل المنتجات';
-        tbody.innerHTML = `<tr><td colspan="6" class="empty"><i class="fas fa-exclamation-circle" style="font-size:30px;color:var(--danger);margin-bottom:8px;display:block;"></i><p>${errorMsg}</p><button class="btn btn-main" style="margin-top:10px;" onclick="loadProductsTable()"><i class="fas fa-redo"></i> إعادة المحاولة</button></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="empty"><i class="fas fa-exclamation-circle" style="font-size:30px;color:var(--danger);margin-bottom:8px;display:block;"></i><p>${errorMsg}</p><button class="btn btn-main" style="margin-top:10px;" onclick="loadProductsTable()"><i class="fas fa-redo"></i> إعادة المحاولة</button></td></tr>`;
     }
 }
 
@@ -1094,6 +1094,31 @@ window.deleteProduct = async (id) => {
     if (!requirePerm('products_delete', 'حذف المنتجات')) return;
     if (!confirm('هل أنت متأكد؟')) return;
     await deleteDoc(doc(db, "products", id));
+    loadProductsTable(); loadPosProducts(); loadStats();
+};
+
+window.toggleSelectAllProducts = () => {
+    const topCb = document.getElementById('selectAllProdTop');
+    const headerCb = document.getElementById('selectAllProd');
+    let checked;
+    if (event && event.target) {
+        checked = event.target.checked;
+        if (event.target === topCb && headerCb) headerCb.checked = checked;
+        else if (event.target === headerCb && topCb) topCb.checked = checked;
+    } else {
+        checked = topCb ? topCb.checked : (headerCb ? headerCb.checked : false);
+    }
+    document.querySelectorAll('.prod-select').forEach(cb => cb.checked = checked);
+};
+
+window.getSelectedProducts = () => Array.from(document.querySelectorAll('.prod-select:checked')).map(cb => cb.value);
+
+window.deleteSelectedProducts = async () => {
+    const ids = getSelectedProducts();
+    if (ids.length === 0) { alert('اختر منتجات أولاً'); return; }
+    if (!requirePerm('products_delete', 'حذف المنتجات')) return;
+    if (!confirm(`هل أنت متأكد من حذف ${ids.length} منتج؟`)) return;
+    for (const id of ids) await deleteDoc(doc(db, "products", id));
     loadProductsTable(); loadPosProducts(); loadStats();
 };
 let editingProductId = null;
@@ -1882,6 +1907,9 @@ window.toggleSidebar = toggleSidebar;
 window.toggleSelectAllLogs = toggleSelectAllLogs;
 window.getSelectedLogs = getSelectedLogs;
 window.deleteSelectedLogs = deleteSelectedLogs;
+window.toggleSelectAllProducts = toggleSelectAllProducts;
+window.getSelectedProducts = getSelectedProducts;
+window.deleteSelectedProducts = deleteSelectedProducts;
 window.navTo = navTo;
 window.loadPosProducts = loadPosProducts;
 window.filterProducts = filterProducts;
