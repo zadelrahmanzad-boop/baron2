@@ -488,16 +488,7 @@ async function loadPosProducts() {
         allProducts = [];
         if (snap.empty) {
             const defaults = [
-                { code: "#1001", name: "تشكن بروست 2 قطع", price: 165, category: "تشكن" },
-                { code: "#1002", name: "تشكن بروست 4 قطع", price: 289, category: "تشكن" },
-                { code: "#1003", name: "تشكن بروست 8 قطع", price: 589, category: "تشكن" },
-                { code: "#1015", name: "هوت هاني تشكن رانش", price: 185, category: "تشكن" },
-                { code: "#1022", name: "بطاطس مقلية باكيت", price: 45, category: "سايدز" },
-                { code: "#1023", name: "بطاطس مقلية فاميلي", price: 79, category: "سايدز" },
-                { code: "#1027", name: "موزاريلا ستيكس 4 قطع", price: 59, category: "سايدز" },
-                { code: "#1029", name: "شريحة تركي مدخن", price: 20, category: "سايدز" },
-                { code: "#1037", name: "تشكن تشيز برجر", price: 150, category: "برجر" },
-                { code: "#1038", name: "بيف تشيز برجر", price: 150, category: "برجر" }
+
             ];
             let addedCount = 0;
             for (const p of defaults) {
